@@ -44,9 +44,9 @@ def logscale_spec(spec, sr=44100, factor=20.):
     newspec = np.complex128(np.zeros([timebins, len(scale)]))
     for i in range(0, len(scale)):
         if i == len(scale) - 1:
-            newspec[:, i] = np.sum(spec[:, scale[i]:], axis=1)
+            newspec[:, i] = np.sum(spec[:, int(scale[i]):], axis=1)
         else:
-            newspec[:, i] = np.sum(spec[:, scale[i]:scale[i + 1]], axis=1)
+            newspec[:, i] = np.sum(spec[:, int(scale[i]):int(scale[i + 1])], axis=1)
 
 
     # list center freq of bins
@@ -54,9 +54,9 @@ def logscale_spec(spec, sr=44100, factor=20.):
     freqs = []
     for i in range(0, len(scale)):
         if i == len(scale) - 1:
-            freqs += [np.mean(allfreqs[scale[i]:])]
+            freqs += [np.mean(allfreqs[int(scale[i]):])]
         else:
-            freqs += [np.mean(allfreqs[scale[i]:scale[i + 1]])]
+            freqs += [np.mean(allfreqs[int(scale[i]):int(scale[i + 1])])]
 
     return newspec, freqs
 

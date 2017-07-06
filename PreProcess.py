@@ -17,13 +17,11 @@ def plot_spectrogram(audiopath, binsize=2**10, plotpath=None, colormap="jet"):
 
     info = sf.info(audiopath)
     sample_rate = info.samplerate
-    print(np.zeros(int(sample_rate/2.0)))
     duration = info.duration
     frames = info.frames
 
     with sf.SoundFile(audiopath, 'r') as f:
         _samples = f.read(frames)
-        print(_samples)
         out_file = audiopath + '_spectrogram.jpg'
         plt.figure(figsize=(15, 7.5))
         spectrogram_utilities.plotstft(_samples, sample_rate, axis=None, binsize=2**10, plotpath=None)
@@ -37,5 +35,5 @@ audiopath = os.path.join(path_data, 'BlueWhaleB/BLED20150914/') + 'bb_sel.01.ch0
 plot_spectrogram(audiopath, 0)
 
 # Plot whale sound
-# plot_spectrogram(path_data + 'bb_sel.109.ch01.170616.185530.36..wav', 1)
+#plot_spectrogram(path_data + 'bb_sel.109.ch01.170616.185530.36..wav', 1)
 
