@@ -5,7 +5,10 @@
 
 import numpy as np
 from numpy.lib import stride_tricks
+import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.rcParams['backend'] = "Qt4Agg"
+
 
 """ short time fourier transform of audio signal """
 
@@ -108,7 +111,7 @@ def plotstft(samples, sample_rate, axis, binsize=2 ** 10, plotpath=None, colorma
         axis.set_yticks(ylocs, ["%.02f" % freq[i] for i in ylocs]),
 
     if plotpath is None:
-        plt.show()
+        plt.savefig('/Users/dannyd_sc/Documents/REU/spectest0.png')
     else:
         extent = plt.axes().get_window_extent().transformed(fig.dpi_scale_trans.inverted())
         # fig.savefig(plotpath, bbox_inches=extent)
@@ -129,7 +132,7 @@ def plotstft(samples, sample_rate, axis, binsize=2 ** 10, plotpath=None, colorma
     ax2 = plt.subplot(122)
     plot_spectrogram(ax2, P)
     plt.suptitle('Comparison low frequency range (left) vs full image (right)', fontsize=16)
-    plt.show()
+    plt.savefig('/Users/dannyd_sc/Documents/REU/spectest1.png')
 
     # Extreme values are capped to mean ± 1.5 std
     fact_ = 1.50
@@ -145,6 +148,6 @@ def plotstft(samples, sample_rate, axis, binsize=2 ** 10, plotpath=None, colorma
     ax2 = plt.subplot(122)
     plot_spectrogram(ax2, R)
     plt.suptitle('Comparison original image (left) vs capped extreme values (right)', fontsize=16)
-    plt.show()
+    plt.savefig('/Users/dannyd_sc/Documents/REU/spectest.png')
 
     print('Done')
