@@ -14,7 +14,7 @@ Code for testing CNN classification of blue and fin whales
 Create virtual environment with correct dependencies
 
     $ pip install virtualenv
-    $ virtualenv venv-pam
+    $ virtualenv --python=/usr/bin/python3.6 venv-pam
     $ source venv-pam/bin/activate
     $ pip install -r requirements.txt
 
