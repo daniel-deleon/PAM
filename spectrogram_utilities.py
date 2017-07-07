@@ -1,19 +1,25 @@
 #!/usr/bin/env python
 # coding: utf-8
-""" This work is licensed under a Creative Commons Attribution 3.0 Unported License.
+""" This work is licensed under a Creative Commons Attribution 3.0 Unsupported License.
     Frank Zalkow, 2012-2013 """
 
 import numpy as np
 from numpy.lib import stride_tricks
 import matplotlib
 import matplotlib.pyplot as plt
-matplotlib.rcParams['backend'] = "Qt4Agg"
+import os
 
-
-""" short time fourier transform of audio signal """
-
+from scipy.ndimage.filters import gaussian_filter
 
 def stft(sig, frameSize, overlapFac=0.5, window=np.hanning):
+    '''
+    short time fourier transform of audio signal
+    :param sig: 
+    :param frameSize: 
+    :param overlapFac: 
+    :param window: 
+    :return: 
+    '''
     win = window(frameSize)
     hopSize = int(frameSize - np.floor(overlapFac * frameSize))
     # zeros at beginning (thus center of 1st window should be for sample nr. 0)
@@ -33,10 +39,14 @@ def stft(sig, frameSize, overlapFac=0.5, window=np.hanning):
     return np.fft.rfft(frames)
 
 
-""" scale frequency axis logarithmically """
-
-
 def logscale_spec(spec, sr=44100, factor=20.):
+    '''
+     scale frequency axis logarithmically 
+    :param spec: 
+    :param sr: 
+    :param factor: 
+    :return: 
+    '''
     timebins, freqbins = np.shape(spec)
 
     scale = np.linspace(0, 1, freqbins) ** factor
@@ -64,8 +74,13 @@ def logscale_spec(spec, sr=44100, factor=20.):
     return newspec, freqs
 
 
-# Function to allow code reusability
 def plot_spectrogram(ax, P):
+    '''
+    Function to allow code reuse
+    :param ax: 
+    :param P: 
+    :return: 
+    '''
     from matplotlib import mlab, cm
     import matplotlib.ticker as plticker
 
@@ -80,43 +95,36 @@ def plot_spectrogram(ax, P):
     cbar.set_label('Amplitude', fontsize=12)
 
 
-""" plot spectrogram"""
-
-
-def plotstft(samples, sample_rate, axis, binsize=2 ** 10, plotpath=None, colormap="jet"):
+def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None, colormap="jet"):
+    '''
+    optimize spectrogram ans and optionally save spectrogram
+    :param samples: 
+    :param sample_rate:  
+    :param binsize: 
+    :param plotpath: 
+    :param colormap: 
+    :return: 
+    '''
+    from matplotlib import mlab, cm
     s = stft(samples, binsize)
     sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
     ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
     timebins, freqbins = np.shape(ims)
+
     fig = plt.figure()
     plt.imshow(np.transpose(ims), origin="lower", aspect="auto", cmap=colormap, interpolation="none")
     xlocs = np.float32(np.linspace(0, timebins - 1, 5))
     ylocs = np.int16(np.round(np.linspace(0, freqbins - 1, 10)))
-
-    if axis is None:
-        plt.colorbar()
-        plt.xlabel("time (s)")
-        plt.ylabel("frequency (hz)")
-        plt.xlim([0, timebins - 1])
-        plt.ylim([0, freqbins])
-        plt.xticks(xlocs, ["%.02f" % l for l in ((xlocs * len(samples) / timebins) + (0.5 * binsize)) / sample_rate])
-        plt.yticks(ylocs, ["%.02f" % freq[i] for i in ylocs])
-    else:
-        axis.set_xlabel("time (s)")
-        axis.set_ylabel("frequency (hz)")
-        axis.set_xlim([0, timebins - 1])
-        axis.set_ylim([0, freqbins])
-        axis.set_xticks(xlocs,
-                        ["%.02f" % l for l in ((xlocs * len(samples) / timebins) + (0.5 * binsize)) / sample_rate])
-        axis.set_yticks(ylocs, ["%.02f" % freq[i] for i in ylocs]),
-
-    if plotpath is None:
-        plt.savefig('/Users/dannyd_sc/Documents/REU/spectest0.png')
-    else:
-        extent = plt.axes().get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-        # fig.savefig(plotpath, bbox_inches=extent)
-        fig.savefig(bbox_inches='tight', pad_inches=0.0)
-        fig.clf()
+    plt.colorbar()
+    plt.xlabel("time (s)")
+    plt.ylabel("frequency (hz)")
+    plt.xlim([0, timebins - 1])
+    plt.ylim([0, freqbins])
+    plt.xticks(xlocs, ["%.02f" % l for l in ((xlocs * len(samples) / timebins) + (0.5 * binsize)) / sample_rate])
+    plt.yticks(ylocs, ["%.02f" % freq[i] for i in ylocs])
+    plt.title('Spectrogram')
+    plt.show()
+    fig.clf()
 
     P = np.transpose(ims)
     freq_bin = float(P.shape[0]) / float(sample_rate / 2)  # bin/Hz
@@ -132,10 +140,11 @@ def plotstft(samples, sample_rate, axis, binsize=2 ** 10, plotpath=None, colorma
     ax2 = plt.subplot(122)
     plot_spectrogram(ax2, P)
     plt.suptitle('Comparison low frequency range (left) vs full image (right)', fontsize=16)
-    plt.savefig('/Users/dannyd_sc/Documents/REU/spectest1.png')
+    plt.show()
+    fig.clf()
 
     # Extreme values are capped to mean ± 1.5 std
-    fact_ = 1.50
+    fact_ = 2.50
     Q[Q > mval + fact_ * sval] = mval + fact_ * sval
     Q[Q < mval - fact_ * sval] = mval - fact_ * sval
 
@@ -148,6 +157,24 @@ def plotstft(samples, sample_rate, axis, binsize=2 ** 10, plotpath=None, colorma
     ax2 = plt.subplot(122)
     plot_spectrogram(ax2, R)
     plt.suptitle('Comparison original image (left) vs capped extreme values (right)', fontsize=16)
-    plt.savefig('/Users/dannyd_sc/Documents/REU/spectest.png')
+    plt.show()
+    fig.clf()
+
+    # Save the final result, slicing only the part of the array above the cut-off frequency cut_off_freq and blurring
+    if plotpath is not None:
+        # make a 3x3 figure without the frame
+        fig = plt.figure()
+        width = 3
+        height = 3
+        fig.set_size_inches(width, height)
+        plt.axis('off')
+        blurred = gaussian_filter(R[minM:, :], sigma=1)
+        plt.imshow(blurred, origin="lower", aspect=4, cmap=cm.get_cmap('bwr'))
+        plt.tight_layout()
+        plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
+        extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+        plt.savefig(plotpath, bbox_inches=extent)
+        fig.clf()
+
 
     print('Done')

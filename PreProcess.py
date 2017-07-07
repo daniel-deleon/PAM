@@ -1,38 +1,41 @@
-import os
-import numpy as np
-import aifc
-import wave
 import matplotlib.pyplot as plt
-from matplotlib import mlab
-import matplotlib
-import pandas as pd
 import spectrogram_utilities
 import soundfile as sf
-
+import os
 
 """ plot spectrogram"""
 
 
-def plot_spectrogram(audiopath, binsize=2**10, plotpath=None, colormap="jet"):
+def plot_spectrogram(audio_path, spectrogram_out=None, bin_size=2**10, colormap="jet"):
 
-    info = sf.info(audiopath)
+    info = sf.info(audio_path)
     sample_rate = info.samplerate
-    duration = info.duration
     frames = info.frames
 
-    with sf.SoundFile(audiopath, 'r') as f:
+    with sf.SoundFile(audio_path, 'r') as f:
         _samples = f.read(frames)
-        out_file = audiopath + '_spectrogram.jpg'
-        plt.figure(figsize=(15, 7.5))
-        spectrogram_utilities.plotstft(_samples, sample_rate, axis=None, binsize=2**10, plotpath=None)
+        out_file = ''
+        if spectrogram_out:
+            _, file = os.path.split(audio_path)
+            base_file = file.split('.wav')[0]
+            out_file = os.path.join(spectrogram_out, base_file + 'spectrogram.png')
 
+        spectrogram_utilities.optimize_spectrogram(_samples, sample_rate, binsize=2**10, plotpath=out_file)
 
-# Set path to directory with folders train and test
+# Set path to directory with folders train and test wav files
 path_data = '/Users/dannyd_sc/Google Drive/MBARI/PAM_Summer_Project_2017/BLED_Results/'
 
+# Set path to directory to save optimized spectrogram of wav files
+spectrogram_path = os.path.join(os.getcwd(), 'spectrogram')
+#spectrogram_out = os.path.join(path_data, 'spectrogram')
+# make the directory if it doesn't exist
+if not os.path.exists(spectrogram_path):
+    os.mkdir(spectrogram_path)
+
 # Plot whale sound
-audiopath = os.path.join(path_data, 'BlueWhaleB/BLED20150914/') + 'bb_sel.01.ch01.170620.083556.91..wav'
-plot_spectrogram(audiopath, 0)
+audio_path = os.path.join(path_data, 'BlueWhaleB/BLED20150914/') + 'bb_sel.01.ch01.170620.083556.91..wav'
+#audio_path = '/Users/dcline/Downloads/bb_sel.542.ch01.170617.024759.58..wav'
+plot_spectrogram(audio_path, spectrogram_path)
 
 # Plot whale sound
 #plot_spectrogram(path_data + 'bb_sel.109.ch01.170616.185530.36..wav', 1)
