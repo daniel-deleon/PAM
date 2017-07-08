@@ -1,14 +1,26 @@
 #!/usr/bin/env python
-# coding: utf-8
-""" This work is licensed under a Creative Commons Attribution 3.0 Unsupported License.
-    Frank Zalkow, 2012-2013 """
 
-import numpy as np
-from numpy.lib import stride_tricks
+__author__ = "Danelle Cline, Daniel De Leon"
+__copyright__ = "Copyright 2017, MBARI"
+__credits__ = ["MBARI"]
+__license__ = "GPL"
+__maintainer__ = "Daniel De Leon"
+__email__ = "ddeleon at mbari.org"
+__doc__ = '''
+
+Utility module for generating spectrograms for classification tests
+
+@author: __author__
+@status: __status__
+@license: __license__
+'''
+
+import numpy as np 
 import matplotlib
 import matplotlib.pyplot as plt
 import os
 from matplotlib import cm
+from matplotlib import mlab
 
 from scipy.ndimage.filters import gaussian_filter
 
@@ -21,24 +33,15 @@ def stft(sig, frameSize, overlapFac=0.5, window=np.hanning):
     :param window: 
     :return: 
     '''
-    win = window(frameSize)
-    hopSize = int(frameSize - np.floor(overlapFac * frameSize))
-    # zeros at beginning (thus center of 1st window should be for sample nr. 0)
-    samples = np.append(np.zeros(int(np.floor(frameSize / 2.0))), sig)
-
-
-    # cols for windowing
-    cols = np.ceil((len(samples) - frameSize) / float(hopSize)) + 1
-
-    # zeros at end (thus samples can be fully covered by frames)
-    samples = np.append(samples, np.zeros(frameSize))
-
-    frames = stride_tricks.as_strided(samples, shape=(int(cols), frameSize),
-                                      strides=(samples.strides[0] * hopSize, samples.strides[0])).copy()
-    frames *= win
-
-    return np.fft.rfft(frames)
-
+    P = matplotlib.mlab.specgram(sig,
+                             NFFT=frameSize,
+                             Fs=250,
+                             window=window,
+                             noverlap=int(overlapFac*250),
+                             pad_to = None,
+                             sides = 'default',
+                                scale_by_freq = None)
+    return P
 
 def logscale_spec(spec, sr=44100, factor=20.):
     '''
