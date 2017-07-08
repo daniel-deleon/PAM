@@ -8,6 +8,7 @@ from numpy.lib import stride_tricks
 import matplotlib
 import matplotlib.pyplot as plt
 import os
+from matplotlib import cm
 
 from scipy.ndimage.filters import gaussian_filter
 
@@ -74,28 +75,78 @@ def logscale_spec(spec, sr=44100, factor=20.):
     return newspec, freqs
 
 
-def plot_spectrogram(ax, P):
+def plot_spectrogram(ax, P, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len):
     '''
     Function to allow code reuse
     :param ax: 
     :param P: 
     :return: 
     '''
-    from matplotlib import mlab, cm
+    from matplotlib import mlab
     import matplotlib.ticker as plticker
 
-    plt.imshow(P, origin='lower', extent=[-6, 6, -1, 1], aspect=4, cmap=cm.get_cmap('bwr'))
-    loc = plticker.MultipleLocator(base=3.0)  # this locator puts ticks at regular intervals
-    ax.xaxis.set_major_locator(loc)
-    ax.set_xticklabels(np.arange(-0.5, 2.5, 0.5))
-    ax.set_yticklabels(range(0, 1001, 250))
+    plt.imshow(P, origin='lower', cmap=colormap)
+    xlocs = np.float32(np.linspace(0, timebins - 1, 5))
+    ylocs = np.int16(np.round(np.linspace(0, freqbins - 1, 10)))
+
+    ax.set_xticks(xlocs)
+    ax.set_yticks(ylocs)
+
+    ax.set_xlim([0, timebins - 1])
+    ax.set_ylim([0, freqbins])
+    ax.set_xticklabels(["%.02f" % l for l in ((xlocs * sample_len / timebins) + (0.5 * binsize)) / sample_rate])
+    ax.set_yticklabels(["%.02f" % freq[i] for i in ylocs])
+
     ax.set_xlabel('Time (seconds)', fontsize=12)
     ax.set_ylabel('Frequency (Hz)', fontsize=12)
     cbar = plt.colorbar()
     cbar.set_label('Amplitude', fontsize=12)
 
 
-def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None, colormap="jet"):
+def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_cmap('bwr'), plotpath=os.path.join(os.getcwd())):
+    '''
+    optimize and save spectrogram
+    :param samples: 
+    :param sample_rate: 
+    :param binsize: 
+    :param plotpath: 
+    :param colormap: 
+    :return: 
+    '''
+    from matplotlib import mlab, cm
+    s = stft(samples, binsize, 0.80)
+    sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
+    ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
+
+    P = np.transpose(ims)
+    freq_bin = float(P.shape[0]) / float(sample_rate / 2)  # bin/Hz
+    cut_off_freq = 29
+    minM = -1 * (P.shape[0] - int(cut_off_freq * freq_bin))
+    Q = P.copy()
+    mval, sval = np.mean(Q[:minM]), np.std(Q[:minM])
+
+    # Extreme values are capped to mean ± 1.5 std
+    fact_ = 1.50
+    Q[Q > mval + fact_ * sval] = mval + fact_ * sval
+    Q[Q < mval - fact_ * sval] = mval - fact_ * sval
+
+    # Save the final result, slicing only the part of the array above the cut-off frequency cut_off_freq and blurring
+    # make a 3x3 figure without the frame
+    fig = plt.figure()
+    width = 3
+    height = 3
+    fig.set_size_inches(width, height)
+    plt.axis('off')
+    blurred = gaussian_filter(Q, sigma=1)
+    plt.imshow(blurred[minM:, :], origin="lower", aspect=2, cmap=colormap)
+    plt.tight_layout()
+    plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
+    extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    plt.savefig(plotpath, bbox_inches=extent)
+    fig.clf()
+    print('Done creating ' + plotpath)
+
+def display_optimized_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None):
     '''
     optimize spectrogram ans and optionally save spectrogram
     :param samples: 
@@ -106,23 +157,16 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None, c
     :return: 
     '''
     from matplotlib import mlab, cm
-    s = stft(samples, binsize)
+    s = stft(samples, binsize, 0.80)
     sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
     ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
     timebins, freqbins = np.shape(ims)
+    colormap = cm.get_cmap('bwr')
+    sample_len = len(samples)
 
     fig = plt.figure()
-    plt.imshow(np.transpose(ims), origin="lower", aspect="auto", cmap=colormap, interpolation="none")
-    xlocs = np.float32(np.linspace(0, timebins - 1, 5))
-    ylocs = np.int16(np.round(np.linspace(0, freqbins - 1, 10)))
-    plt.colorbar()
-    plt.xlabel("time (s)")
-    plt.ylabel("frequency (hz)")
-    plt.xlim([0, timebins - 1])
-    plt.ylim([0, freqbins])
-    plt.xticks(xlocs, ["%.02f" % l for l in ((xlocs * len(samples) / timebins) + (0.5 * binsize)) / sample_rate])
-    plt.yticks(ylocs, ["%.02f" % freq[i] for i in ylocs])
-    plt.title('Spectrogram')
+    ax0 = plt.subplot(121)
+    plot_spectrogram(ax0, np.transpose(ims), colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
     plt.show()
     fig.clf()
 
@@ -136,15 +180,15 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None, c
     R[:minM] = 34  # 68/2 maxfreq/2
     fig = plt.figure(figsize=(14, 4))
     ax1 = plt.subplot(121)
-    plot_spectrogram(ax1, R)
+    plot_spectrogram(ax1, R, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
     ax2 = plt.subplot(122)
-    plot_spectrogram(ax2, P)
+    plot_spectrogram(ax2, P, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
     plt.suptitle('Comparison low frequency range (left) vs full image (right)', fontsize=16)
     plt.show()
     fig.clf()
 
     # Extreme values are capped to mean ± 1.5 std
-    fact_ = 2.50
+    fact_ = 1.50
     Q[Q > mval + fact_ * sval] = mval + fact_ * sval
     Q[Q < mval - fact_ * sval] = mval - fact_ * sval
 
@@ -153,9 +197,9 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None, c
     R[:minM] = 34
     fig = plt.figure(figsize=(14, 4))
     ax1 = plt.subplot(121)
-    plot_spectrogram(ax1, P)
+    plot_spectrogram(ax1, P, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
     ax2 = plt.subplot(122)
-    plot_spectrogram(ax2, R)
+    plot_spectrogram(ax2, R, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
     plt.suptitle('Comparison original image (left) vs capped extreme values (right)', fontsize=16)
     plt.show()
     fig.clf()
@@ -169,12 +213,10 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None, c
         fig.set_size_inches(width, height)
         plt.axis('off')
         blurred = gaussian_filter(R[minM:, :], sigma=1)
-        plt.imshow(blurred, origin="lower", aspect=4, cmap=cm.get_cmap('bwr'))
+        plt.imshow(blurred, origin="lower", aspect=4, cmap=colormap)
         plt.tight_layout()
         plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
         extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
         plt.savefig(plotpath, bbox_inches=extent)
         fig.clf()
-
-
-    print('Done')
+        print('Done creating ' + plotpath)
