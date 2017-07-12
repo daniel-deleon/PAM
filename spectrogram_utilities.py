@@ -24,7 +24,7 @@ from matplotlib import mlab
 
 from scipy.ndimage.filters import gaussian_filter
 
-def stft(sig, frameSize, overlapFac=0.5, window=np.hanning):
+def stft(sig, frameSize, overlapFac=0.5):
     '''
     short time fourier transform of audio signal
     :param sig: 
@@ -33,15 +33,11 @@ def stft(sig, frameSize, overlapFac=0.5, window=np.hanning):
     :param window: 
     :return: 
     '''
-    P = matplotlib.mlab.specgram(sig,
+    P, freqs, bins = matplotlib.mlab.specgram(sig,
                              NFFT=frameSize,
-                             Fs=250,
-                             window=window,
-                             noverlap=int(overlapFac*250),
-                             pad_to = None,
-                             sides = 'default',
-                                scale_by_freq = None)
-    return P
+                             Fs=250, 
+                             noverlap=int(overlapFac*250))
+    return np.transpose(P)
 
 def logscale_spec(spec, sr=44100, factor=20.):
     '''
@@ -145,8 +141,8 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_
     plt.tight_layout()
     plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
     extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    plt.savefig(plotpath, bbox_inches=extent)
-    fig.clf()
+    plt.savefig(plotpath, bbox_inches=extent) 
+    plt.close()
     print('Done creating ' + plotpath)
 
 def display_optimized_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None):
