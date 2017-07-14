@@ -27,11 +27,11 @@ from scipy.ndimage.filters import gaussian_filter
 def stft(sig, frameSize, overlapFac=0.5):
     '''
     short time fourier transform of audio signal
-    :param sig: 
-    :param frameSize: 
-    :param overlapFac: 
+    :param sig: array of amplitude values from audio file
+    :param frameSize: frames/sec of audio
+    :param overlapFac: percentage of window overlap
     :param window: 
-    :return: 
+    :return: transpose of values that make up spectrogram
     '''
     P, freqs, bins = matplotlib.mlab.specgram(sig,
                              NFFT=frameSize,
@@ -42,9 +42,9 @@ def stft(sig, frameSize, overlapFac=0.5):
 def logscale_spec(spec, sr=44100, factor=20.):
     '''
      scale frequency axis logarithmically 
-    :param spec: 
-    :param sr: 
-    :param factor: 
+    :param spec: initial values that make up spectrogram
+    :param sr: samples/sec
+    :param factor: exponential growth rate factor
     :return: 
     '''
     timebins, freqbins = np.shape(spec)
@@ -148,12 +148,11 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_
 def display_optimized_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None):
     '''
     optimize spectrogram ans and optionally save spectrogram
-    :param samples: 
-    :param sample_rate:  
-    :param binsize: 
-    :param plotpath: 
-    :param colormap: 
-    :return: 
+    :param samples: array of dB values from audio file
+    :param sample_rate:  samples/sec of audio
+    :param binsize: bins/sec of audio
+    :param plotpath: location of produced spectrogram
+    :return: enhanced spectrogram
     '''
     from matplotlib import mlab, cm
     s = stft(samples, binsize, 0.80)
@@ -171,12 +170,13 @@ def display_optimized_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpat
 
     P = np.transpose(ims)
     freq_bin = float(P.shape[0]) / float(sample_rate / 2)  # bin/Hz
-    cut_off_freq = 29  # Hz
-    minM = -1 * (P.shape[0] - int(cut_off_freq * freq_bin))
+    low_cut_off_freq, high_cut_off_freq = 39, 51  # Hz
+    minM = -1 * (P.shape[0] - int(low_cut_off_freq * freq_bin))
+    maxM = -1 * (P.shape[0] - int(high_cut_off_freq * freq_bin))
     Q = P.copy()
     R = Q.copy()
-    mval, sval = np.mean(Q[:minM]), np.std(Q[:minM])
-    R[:minM] = 34  # 68/2 maxfreq/2
+    mval, sval = np.mean(np.append(Q[:minM], [Q[maxM:]])), np.std(np.append(Q[:minM], [Q[maxM:]]))
+    R[:minM] = R[maxM:] = 34  # 68/2 maxfreq/2
     fig = plt.figure(figsize=(14, 4))
     ax1 = plt.subplot(121)
     plot_spectrogram(ax1, R, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)

@@ -6,12 +6,11 @@ import os
 
 def plot_spectrogram(audio_path, spectrogram_out=None, bin_size=2 ** 10):
     '''
-     plot spectrogram"
-    :param audio_path: 
-    :param spectrogram_out: 
-    :param bin_size: 
-    :param colormap: 
-    :return: 
+     plot spectrogram
+    :param audio_path: location of original audio file (.wav)
+    :param spectrogram_out: directory where all produced spectrograms are located
+    :param bin_size: audio file's sample rate (Hz)
+    :return: saves a spectrogram in spectrogram_out and displays it
     '''
 
     info = sf.info(audio_path)
