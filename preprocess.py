@@ -33,7 +33,7 @@ def plot_spectrogram(audio_path, spectrogram_out=None, bin_size=2 ** 10):
 if __name__ == '__main__':
 
     # Set path to directory with folders train and test wav files
-    path_data = '/Users/dannyd_sc/Google Drive/MBARI/PAM_Summer_Project_2017/BLED_Results/' 
+    path_data = '/Users/ddeleon/Google Drive/MBARI/PAM_Summer_Project_2017/BLED_Results/'
     
     # Set path to directory to save optimized spectrogram of wav files
     spectrogram_path = os.path.join(os.getcwd(), 'spectrogram')

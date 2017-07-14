@@ -98,8 +98,9 @@ def plot_spectrogram(ax, P, colormap, timebins, freqbins, freq, binsize, sample_
 
     ax.set_xlabel('Time (seconds)', fontsize=12)
     ax.set_ylabel('Frequency (Hz)', fontsize=12)
-    cbar = plt.colorbar()
-    cbar.set_label('Amplitude', fontsize=12)
+    #cbar = plt.colorbar()
+    #cbar.set_label('Amplitude', fontsize=12)
+    plt.axis('off')
 
 
 def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_cmap('bwr'), plotpath=os.path.join(os.getcwd())):
