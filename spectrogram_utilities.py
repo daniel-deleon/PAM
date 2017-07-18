@@ -136,6 +136,11 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_
     Q[Q > mval + fact_ * sval] = mval + fact_ * sval
     Q[Q < mval - fact_ * sval] = mval - fact_ * sval
 
+    inner = 3
+    small_filter = np.ones(inner)
+    for i in range(len(Q)):
+        Q[i] = np.convolve(small_filter,Q[i],'same')
+
     # Save the final result, slicing only the part of the array above the cut-off frequency cut_off_freq and blurring
     # make a 3x3 figure without the frame
     fig = plt.figure()
@@ -148,6 +153,7 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_
     plt.tight_layout()
     plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
     extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+
 
     plt.savefig(plotpath, bbox_inches=extent) 
     plt.close()
