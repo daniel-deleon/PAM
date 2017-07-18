@@ -87,12 +87,11 @@ def plot_spectrogram(ax, P, colormap, timebins, freqbins, freq, binsize, sample_
     plt.imshow(P, origin='lower', cmap=colormap)
     xlocs = np.float32(np.linspace(0, timebins - 1, 5))
     ylocs = np.int16(np.round(np.linspace(0, freqbins - 1, 10)))
-
     ax.set_xticks(xlocs)
     ax.set_yticks(ylocs)
 
     ax.set_xlim([0, timebins - 1])
-    ax.set_ylim([0, freqbins])
+    ax.set_ylim([39, 51])
     ax.set_xticklabels(["%.02f" % l for l in ((xlocs * sample_len / timebins) + (0.5 * binsize)) / sample_rate])
     ax.set_yticklabels(["%.02f" % freq[i] for i in ylocs])
 
@@ -114,16 +113,23 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_
     :return: 
     '''
     from matplotlib import mlab, cm
-    s = stft(samples, binsize, 0.80)
+    s = stft(samples, binsize, .8)
     sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
     ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
 
     P = np.transpose(ims)
-    freq_bin = float(P.shape[0]) / float(sample_rate / 2)  # bin/Hz
-    cut_off_freq = 29
-    minM = -1 * (P.shape[0] - int(cut_off_freq * freq_bin))
+    freq_bin = float(P.shape[0]) / float(sample_rate / 2)
+    low_cut_off_freq, high_cut_off_freq = 39, 51
+    minM = -1 * (P.shape[0] - int(low_cut_off_freq * freq_bin))
+    maxM = -1 * (P.shape[0] - int(high_cut_off_freq * freq_bin))
+
     Q = P.copy()
-    mval, sval = np.mean(Q[:minM]), np.std(Q[:minM])
+    mval, sval = np.mean(np.append(Q[:minM], [Q[maxM:]])), np.std(np.append(Q[:minM], [Q[maxM:]]))
+    Q[:minM] = Q[maxM:] = 34
+
+    #uncomment below to zoom in whale call
+    Q = Q[minM:maxM]
+
 
     # Extreme values are capped to mean ± 1.5 std
     fact_ = 1.50
@@ -142,6 +148,7 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_
     plt.tight_layout()
     plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
     extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+
     plt.savefig(plotpath, bbox_inches=extent) 
     plt.close()
     print('Done creating ' + plotpath)
@@ -166,18 +173,17 @@ def display_optimized_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpat
     fig = plt.figure()
     ax0 = plt.subplot(121)
     plot_spectrogram(ax0, np.transpose(ims), colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
-    plt.show()
     fig.clf()
 
     P = np.transpose(ims)
-    freq_bin = float(P.shape[0]) / float(sample_rate / 2)  # bin/Hz
+    freq_bin = float(P.shape[0]) / float(sample_rate / 2) # Hz/bin
     low_cut_off_freq, high_cut_off_freq = 39, 51  # Hz
     minM = -1 * (P.shape[0] - int(low_cut_off_freq * freq_bin))
     maxM = -1 * (P.shape[0] - int(high_cut_off_freq * freq_bin))
     Q = P.copy()
     R = Q.copy()
     mval, sval = np.mean(np.append(Q[:minM], [Q[maxM:]])), np.std(np.append(Q[:minM], [Q[maxM:]]))
-    R[:minM] = R[maxM:] = 34  # 68/2 maxfreq/2
+    R[:minM] = R[maxM: - 1] = 34  # 68/2 maxfreq/2
     fig = plt.figure(figsize=(14, 4))
     ax1 = plt.subplot(121)
     plot_spectrogram(ax1, R, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)

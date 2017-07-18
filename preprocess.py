@@ -25,9 +25,9 @@ def plot_spectrogram(audio_path, spectrogram_out=None, bin_size=2 ** 10):
             base_file = file.split('.wav')[0]
             out_file = os.path.join(spectrogram_out, base_file + 'spectrogram.png')
 
-        #spectrogram_utilities.optimize_spectrogram(_samples, sample_rate, binsize=bin_size, plotpath=out_file)
+        spectrogram_utilities.optimize_spectrogram(_samples, sample_rate, binsize=bin_size, plotpath=out_file)
         # uncomment below to display instead of just saving to disk
-        spectrogram_utilities.display_optimized_spectrogram(_samples, sample_rate, binsize=bin_size, plotpath=out_file)
+        #spectrogram_utilities.display_optimized_spectrogram(_samples, sample_rate, binsize=bin_size, plotpath=out_file)
 
 
 if __name__ == '__main__':
@@ -36,8 +36,9 @@ if __name__ == '__main__':
     path_data = '/Users/ddeleon/Google Drive/MBARI/PAM_Summer_Project_2017/BLED_Results/'
     
     # Set path to directory to save optimized spectrogram of wav files
-    spectrogram_path = os.path.join(os.getcwd(), 'spectrogram')
-    
+    #spectrogram_path = '/Users/ddeleon/Google Drive/MBARI/PAM_Summer_Project_2017/spectrograms'
+    spectrogram_path = '/Users/ddeleon/Documents/spectrograms'
+
     # make the directory if it doesn't exist
     if not os.path.exists(spectrogram_path):
         os.mkdir(spectrogram_path)
