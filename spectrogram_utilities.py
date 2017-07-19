@@ -136,6 +136,7 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_
     Q[Q > mval + fact_ * sval] = mval + fact_ * sval
     Q[Q < mval - fact_ * sval] = mval - fact_ * sval
 
+    # Values are convolved by an array of ones
     inner = 3
     small_filter = np.ones(inner)
     for i in range(len(Q)):
@@ -148,12 +149,11 @@ def optimize_spectrogram(samples, sample_rate, binsize=2 ** 10, colormap=cm.get_
     height = 3
     fig.set_size_inches(width, height)
     plt.axis('off')
-    blurred = gaussian_filter(Q, sigma=1)
-    plt.imshow(blurred[minM:, :], origin="lower", aspect=2, cmap=colormap)
+    plt.imshow(np.flipud(Q),interpolation='bilinear',cmap=colormap)
     plt.tight_layout()
     plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
     extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-
+    #plt.show()
 
     plt.savefig(plotpath, bbox_inches=extent) 
     plt.close()
