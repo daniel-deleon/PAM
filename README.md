@@ -13,10 +13,12 @@ Code for testing CNN classification of blue and fin whales
 
 Create virtual environment with correct dependencies
 
-    $ pip install virtualenv
+    $ pip3 install virtualenv
     $ virtualenv --python=/usr/bin/python3.6 venv-pam
     $ source venv-pam/bin/activate
-    $ pip install -r requirements.txt
+    $ pip3 install -r requirements.txt
+    $ export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-0.12.1-py3-none-any.whl
+    $ pip3 install --upgrade $TF_BINARY_URL
 
 Check-out code
 
