@@ -4,7 +4,7 @@ import soundfile as sf
 import os
   
 
-def plot_spectrogram(audio_path, spectrogram_out=None, bin_size=2 ** 10):
+def plot_spectrogram(date, audio_path, spectrogram_out=None, bin_size=2 ** 10):
     '''
      plot spectrogram
     :param audio_path: location of original audio file (.wav)
@@ -23,7 +23,7 @@ def plot_spectrogram(audio_path, spectrogram_out=None, bin_size=2 ** 10):
         if spectrogram_out:
             _, file = os.path.split(audio_path)
             base_file = file.split('.wav')[0]
-            out_file = os.path.join(spectrogram_out, base_file + 'spectrogram.png')
+            out_file = os.path.join(spectrogram_out, base_file + date + '.spectrogram.png')
 
         spectrogram_utilities.optimize_spectrogram(_samples, sample_rate, binsize=bin_size, plotpath=out_file)
         # uncomment below to display instead of just saving to disk
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     
     # Set path to directory to save optimized spectrogram of wav files
     #spectrogram_path = '/Users/ddeleon/Google Drive/MBARI/PAM_Summer_Project_2017/spectrograms'
-    spectrogram_path = '/Users/ddeleon/Documents/spectrograms'
+    spectrogram_path = '/Users/ddeleon/Documents/Bspectrograms'
 
     # make the directory if it doesn't exist
     if not os.path.exists(spectrogram_path):
@@ -45,13 +45,14 @@ if __name__ == '__main__':
     
     # Plot whale sound
     audio_path = os.path.join(path_data, 'BlueWhaleB/BLED20150914/') + 'bb_sel.01.ch01.170620.083556.91..wav' 
-    plot_spectrogram(audio_path, spectrogram_path, bin_size=250)
+    plot_spectrogram('20150914', audio_path, spectrogram_path, bin_size=250)
     
     # Generate spectrograms of all sounds recursively in a directory  
     for root, dirs, files in os.walk(path_data):
         for file in files:
             if file.endswith(".wav"):
+                date = root.rsplit('/BLED',1)[-1]
                 audio_path = os.path.join(root, file)
-                plot_spectrogram(audio_path, spectrogram_path, 250)
+                plot_spectrogram(date, audio_path, spectrogram_path, 250)
     
      
