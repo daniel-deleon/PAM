@@ -1,6 +1,6 @@
 # Spectrogram parameters
 blue_b_low_cut_off_freq, blue_b_high_cut_off_freq = 39, 51
-fin_low_cut_off_freq, fin_high_cut_off_freq = 10, 39
+fin_low_cut_off_freq, fin_high_cut_off_freq = 10, 36
 
 # Classification model parameters
 BOTTLENECK_TENSOR_NAME = 'pool_3/_reshape:0'

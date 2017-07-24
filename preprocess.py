@@ -40,13 +40,13 @@ def preprocess(bled_path, spectrogram_path, low_cut_off_freq, high_cut_off_freq,
                 if not os.path.exists(spectrogram_path_by_class):
                     os.mkdir(spectrogram_path_by_class)
  
-                info = sf.info(wav_path)
+                info = sf.info(wav)
                 sample_rate = info.samplerate
                 frames = info.frames
 
-                with sf.SoundFile(wav_path, 'r') as f:
+                with sf.SoundFile(wav, 'r') as f:
                     _samples = f.read(frames) 
-                    _, file = os.path.split(wav_path)
+                    _, file = os.path.split(wav)
                     base_file = file.split('.wav')[0]
                     out_file = os.path.join(spectrogram_path_by_class, base_file + date + '.spectrogram.png')
 
@@ -59,12 +59,12 @@ def preprocess(bled_path, spectrogram_path, low_cut_off_freq, high_cut_off_freq,
 if __name__ == '__main__':
 
     # Set path to directory with folders train and test wav files 
-    blue_bled_path = '/Users/dcline/Google Drive/PAM_Summer_Project_2017/BLED_Results/BlueWhaleB/'
-    fin_bled_path = '/Users/dcline/Google Drive/PAM_Summer_Project_2017/BLED_Results/FinWhale/'
+    blue_bled_path = '/Users/ddeleon/Google Drive/MBARI/PAM_Summer_Project_2017/BLED_Results/BlueWhaleB/'
+    fin_bled_path = '/Users/ddeleon/Google Drive/MBARI/PAM_Summer_Project_2017/BLED_Results/FinWhale/'
     
     # Set path to directory to save optimized spectrogram of wav files
-    blue_spectrogram_path = '/Users/dcline/Google Drive/PAM_Summer_Project_2017/data/BlueWhaleB/'
-    fin_spectrogram_path = '/Users/dcline/Google Drive/PAM_Summer_Project_2017/data/FinWhale/' 
+    blue_spectrogram_path = '/Users/ddeleon/Google Drive/MBARI/PAM_Summer_Project_2017/data/BlueWhaleBUpdate/'
+    fin_spectrogram_path = '/Users/ddeleon/Google Drive/MBARI/PAM_Summer_Project_2017/data/FinWhaleUpdate/'
 
     # make the directory if it doesn't exist
     if not os.path.exists(blue_spectrogram_path):
@@ -76,5 +76,5 @@ if __name__ == '__main__':
     #audio_path = os.path.join(path_data, 'BlueWhaleB/BLED20150914/') + 'bb_sel.01.ch01.170620.083556.91..wav'
     #plot_spectrogram('20150914', audio_path, spectrogram_path, bin_size=250)
 
-    preprocess(fin_bled_path, fin_spectrogram_path, conf.fin_low_cut_off_freq, conf.fin_high_cut_off_freq, 512)
-    preprocess(blue_bled_path, blue_spectrogram_path, conf.blue_b_low_cut_off_freq, conf.blue_b_high_cut_off_freq, 256)
+    preprocess(fin_bled_path, fin_spectrogram_path, conf.fin_low_cut_off_freq, conf.fin_high_cut_off_freq, 128)
+    preprocess(blue_bled_path, blue_spectrogram_path, conf.blue_b_low_cut_off_freq, conf.blue_b_high_cut_off_freq, 512)
