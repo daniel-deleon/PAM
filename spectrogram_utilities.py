@@ -105,46 +105,54 @@ def plot_spectrogram(ax, P, colormap, timebins, freqbins, freq, binsize, sample_
     plt.axis('off')
 
 
-def optimize_spectrogram(low_cut_off_freq, high_cut_off_freq, samples, sample_rate, binsize=2 ** 10,
-                         colormap=cm.get_cmap('bwr'), plotpath=os.path.join(os.getcwd())):
+def optimize_spectrogram(conf, samples, sample_rate, colormap=cm.get_cmap('bwr'), plotpath=os.path.join(os.getcwd())):
     '''
     optimize and save spectrogram
-    :param high_cutoff_freq: high cut off frequency for spectrogram
-    :param low_cutoff_freq: low cut off frequency for spectrogram
-    :param samples: 
-    :param sample_rate: 
-    :param binsize: 
-    :param plotpath: 
+    :param conf:  configuration settings for the spectrogram
+    :param samples:  samples to create spectrogram from
+    :param plotpath: path to the file to save the output to
     :param colormap: 
     :return: 
     '''
     from matplotlib import mlab, cm
-    s = stft(samples, binsize, .8)
+    s = stft(samples, conf['num_fft'], .8)
     sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
     ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
 
     P = np.transpose(ims)
     freq_bin = float(P.shape[0]) / float(sample_rate / 2)
-    minM = -1 * (P.shape[0] - int(low_cut_off_freq * freq_bin))
-    maxM = -1 * (P.shape[0] - int(high_cut_off_freq * freq_bin))
+    minM = -1 * (P.shape[0] - int(conf['low_cut_off_freq'] * freq_bin))
+    maxM = -1 * (P.shape[0] - int(conf['high_cut_off_freq'] * freq_bin))
 
     Q = P.copy()
     Q[:minM] = Q[maxM:] = 34
+
+    # Extreme values are capped to mean ± factor* std
+    mval, sval = np.mean(Q), np.std(Q)
+
+    Q[Q > mval + conf['factor'] * sval] = mval + conf['factor'] * sval
+    Q[Q < mval - conf['factor'] * sval] = mval - conf['factor'] * sval
 
     #uncomment below to zoom in whale call
     Q = Q[minM:maxM]
 
     # pad with zeros along the edges to deal with boundary effects from the convolution
-    zero_pad = 5
+    zero_pad = 1
     npad = ((0, 0), (zero_pad, zero_pad))
     Q = np.pad(Q, pad_width=npad, mode='constant', constant_values=0)
 
     # Smooth and remove edges
     inner = 3
     filter = np.ones(inner)
-    Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=1, arr=Q)
+    if conf['blur_axis'] is 'time':
+        Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=1, arr=Q)
+    elif conf['blur_axis'] is 'frequency':
+        Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=0, arr=Q)
+    else:
+        Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=1, arr=Q)
     num_cols = Q2.shape[1] - zero_pad - 1
-    Q = Q2[:,zero_pad+1:num_cols]
+    num_rows = Q2.shape[0] - zero_pad - 1
+    Q = Q2[zero_pad+1:num_rows,zero_pad+1:num_cols]
 
     # Save the final result, slicing only the part of the array above the cut-off frequency cut_off_freq and blurring
     # make a 3x3 figure without the frame

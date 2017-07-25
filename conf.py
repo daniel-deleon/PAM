@@ -1,6 +1,19 @@
 # Spectrogram parameters
-blue_b_low_cut_off_freq, blue_b_high_cut_off_freq = 39, 51
-fin_low_cut_off_freq, fin_high_cut_off_freq = 10, 36
+
+BLUE_B = dict(
+    low_cut_off_freq = 39,
+    high_cut_off_freq = 51,
+    blur_axis = 'time',
+    factor = 3.25,
+    num_fft = 512
+)
+FIN = dict(
+    low_cut_off_freq = 10,
+    high_cut_off_freq = 36,
+    blur_axis = 'frequency',
+    factor = 2.0,
+    num_fft = 128
+)
 
 # Classification model parameters
 BOTTLENECK_TENSOR_NAME = 'pool_3/_reshape:0'
