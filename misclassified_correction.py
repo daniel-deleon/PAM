@@ -31,4 +31,6 @@ for i in table.index:
 
         source = '{0}{1}'.format(base_dir, dst_base)
         dst = '{0}/{1}/{2}'.format(base_dir, prediction, filename)
-        shutil.move(source, dst)
+
+        if os.path.exists(source):
+            shutil.move(source, dst)
