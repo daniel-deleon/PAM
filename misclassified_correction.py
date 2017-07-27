@@ -14,11 +14,21 @@ Places misclassifcations in correct directory using misclassifcation spreadsheet
 
 import pandas as pd
 import shutil
+import os
 
-table = pd.read_excel('/Users/ddeleon/Desktop/misclassifiedFixed.xlsx', sheetname='Sheet1')
+table = pd.read_excel('/Volumes/PAM_Analysis/Classifiers/InceptionV3/models/BlueWhaleBUpdate/01_80test/misclassifiedFixed.xlsx', sheetname='Sheet1')
 
+data_type = 'BlueWhaleBUpdate'
+base_dir = '/Volumes/PAM_Analysis/TrainingData/data/' + data_type
 
 for i in table.index:
     if table['Actual'][i] == table['Predicted'][i]:
-        misclass = table['Filename'][i]
-        shutil.move(misclass, misclass.replace(misclass.split('/')[-2],table['Actual'][i]))
+        misclassified = table['Filename'][i]
+        prediction = table['Predicted'][i]
+
+        filename = misclassified.split('/')[-1]
+        dst_base = misclassified.split(data_type)[-1]
+
+        source = '{0}{1}'.format(base_dir, dst_base)
+        dst = '{0}/{1}/{2}'.format(base_dir, prediction, filename)
+        shutil.move(source, dst)
