@@ -7,7 +7,7 @@ Code for testing CNN classification of blue and fin whales
 - Raven software TBD version
 - Python version  3.6.1, on a Mac OSX download and install from here:
  https://www.python.org/downloads/mac-osx/
-
+- ImageMagick 
 
 ## Running
 
