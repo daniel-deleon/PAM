@@ -794,8 +794,9 @@ def save_metrics(args, classifier, bottlenecks, all_label_names, test_ground_tru
         worksheet.write(0, 0, 'Thumbnail')
         worksheet.write(0, 1, 'Actual')
         worksheet.write(0, 2, 'Predicted')
-        worksheet.write(0, 3, 'Exemplar')
-        worksheet.write(0, 4, 'Filename')
+        worksheet.write(0, 3, 'Score')
+        worksheet.write(0, 4, 'Exemplar')
+        worksheet.write(0, 5, 'Filename')
 
         # calculate the scores for predictions as needed for scipy functions
         row = 1
@@ -820,12 +821,13 @@ def save_metrics(args, classifier, bottlenecks, all_label_names, test_ground_tru
                 worksheet.insert_image(row, 0, thumbnail_file)
                 worksheet.write(row, 1, all_label_names[actual])
                 worksheet.write(row, 2, all_label_names[predicted])
+                worksheet.write(row, 3,  p['class_vector'][predicted])
                 try:
                     thumbnail_file = crop(temp_dir, random.choice(exemplars[all_label_names[predicted]]))
-                    worksheet.insert_image(row, 3, thumbnail_file)
+                    worksheet.insert_image(row, 4, thumbnail_file)
                 except Exception as ex:
                     print('{0}'.format(ex))
-                worksheet.write(row, 4, image_paths[j])
+                worksheet.write(row, 5, image_paths[j])
                 row += 1
 
     workbook.close()
@@ -871,5 +873,5 @@ def save_metrics(args, classifier, bottlenecks, all_label_names, test_ground_tru
 def crop(temp_dir, image_path):
     path, filename = os.path.split(image_path)
     thumbnail_file = os.path.join(temp_dir, 'thumb_' + filename)
-    os.system('convert "%s" -thumbnail 50x50 -unsharp 0x.5 "%s"' % (image_path, thumbnail_file))
+    os.system('/usr/local/bin/convert "%s" -thumbnail 50x50 -unsharp 0x.5 "%s"' % (image_path, thumbnail_file))
     return thumbnail_file
