@@ -173,7 +173,7 @@ def optimize_spectrogram(conf, samples, sample_rate, colormap=cm.get_cmap('bwr')
     path, file = os.path.split(plotpath)
     filename = file.split('.png')[0]
     plotpath_jpeg = '{0}/{1}.jpg'.format(path, filename)
-    cmd = "convert '{0}' '{1}'".format(plotpath, plotpath_jpeg) 
+    cmd = "/usr/local/bin/convert '{0}' '{1}'".format(plotpath, plotpath_jpeg)
     subproc = subprocess.Popen(cmd, env=os.environ, shell=True)
     subproc.communicate()
     print('Done creating ' + plotpath_jpeg)
