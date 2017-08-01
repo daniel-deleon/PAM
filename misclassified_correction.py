@@ -8,7 +8,7 @@ __maintainer__ = "Daniel De Leon"
 __email__ = "ddeleon at mbari.org"
 __doc__ = '''
 
-Places misclassifcations in correct directory using misclassifcation spreadsheet
+Places misclassifications in correct directory using misclassification spreadsheet
 
 '''
 
