@@ -8,7 +8,7 @@ __email__ = "dcline at mbari.org"
 __status__ = "Development"
 __doc__ = '''
 
-This script runs transfer learning on the AESA training data set using the inception v3 model trained on ImageNet
+This script runs transfer learning on the data using the Inception v3 model trained on ImageNet
 
 Based on the TensorFlow code:
 https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/image_retraining/retrain.py
