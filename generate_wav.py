@@ -73,12 +73,20 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
 
 if __name__ == '__main__':
 
-    # Set path to directory with folders with detection results; wav files will get generated in the same place
-    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2015/09/'
-
     # padding in seconds to add to beginning/ending of wav files
     blue_padding = 5
     fin_padding = 3
 
     wav_dir = '/Volumes/PAM_Analysis/decimated/2015/'
-    generate_wav(blue_bled_path, wav_dir, blue_padding)
+
+    # Set path to directory with folders with detection results; wav files will get generated in the same place
+    # organized by month
+    months = [8, 9, 11, 12]
+    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2015/'
+    for m in months:
+        generate_wav('{0}/{1:02}'.format(blue_bled_path, m), wav_dir, blue_padding)
+
+    fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2015/'
+    months = [8, 9, 11, 12]
+    for m in months:
+        generate_wav('{0}/{1:02}'.format(fin_bled_path, m), wav_dir, fin_padding)
