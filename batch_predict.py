@@ -17,10 +17,12 @@ import subprocess
 
 if __name__ == '__main__':
     options = '--learning_rate .01 --random_crop 20'
-    months = [ 8, 11, 12]
-    prefix = ['BlueWhaleB'] #, 'FinWhale/']
+    months = [ 8, 9, 11, 12]
+    prefix = ['FinWhale']
     base_directory = '/Volumes/PAM_Analysis/Batch_Detections/BLED'
-    model_dir = '/Volumes/PAM_Analysis/Classifiers/InceptionV3/models/BlueWhaleBUpdate/01_lines_unk'
+    model_dir = {}
+    model_dir['BlueWhale'] = '/Volumes/PAM_Analysis/Classifiers/InceptionV3/models/BlueWhaleBUpdate/04_lines_unk'
+    model_dir['FinWhale'] = '/Volumes/PAM_Analysis/Classifiers/InceptionV3/models/FinWhaleUpdate/01'
     exemplar_dir = '/Volumes/PAM_Analysis/TrainingData/data/exemplars/'
 
     for m in months:
@@ -39,7 +41,7 @@ if __name__ == '__main__':
             options = ' --prediction_dir {0} --input_dir {1} --bottleneck_dir {2} --model_dir {3}'.format(predict_dir,
                                                                                                         image_dir,
                                                                                                         bottleneck_dir,
-                                                                                                        model_dir)
+                                                                                                        model_dir[p])
 
             cmd = 'python ./predict.py {0}'.format(options)
             print(cmd)
