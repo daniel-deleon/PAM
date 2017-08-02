@@ -102,17 +102,16 @@ def make_image_predictions(sess, output_labels_file, bottleneck_dir, classifier,
   prediction_input = np.array(bottlenecks, dtype=np.float32)
   predictions = classifier.predict(x=prediction_input, as_iterable=True)
   print("Predictions:")
-  for i, p in enumerate(predictions):
-    for k in p.keys():
-      if k == "index":
-        score = p['class_vector'][p[k]]
-        label = labels_list[p[k]]
-        if score > 0.90:
-          print("index label is: %s score %f file: %s" % (label, score, path_list[i]))
-          filename = '{0}_{1}'.format(int(100*score),os.path.basename(path_list[i]))
-          dst = os.path.join(target_dir, label.upper())
-          ensure_dir(dst)
-          copyfile(path_list[i], dst + '/' + filename)
+  with open(os.path.join(target_dir, 'predictions.csv'), "w") as f:
+      f.write("Predicted,Filename,Score\n")
+      for i, p in enumerate(predictions):
+        for k in p.keys():
+          if k == "index":
+            score = p['class_vector'][p[k]]
+            label = labels_list[p[k]]
+            if score > 0.90:
+              print("index label is: %s score %f file: %s" % (label, score, path_list[i]))
+              f.write("{0},{1},{2}\n".format(label, path_list[i], score))
 
 def get_dims(image):
   """
