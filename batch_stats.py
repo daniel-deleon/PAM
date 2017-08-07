@@ -20,12 +20,8 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
 
-    months = [8, 9, 11, 12]
+    months = [8, 9, 10, 11, 12]
     prefix = ['BlueWhaleB', 'FinWhale']
-    labels = {}
-    labels['BlueWhaleB'] = ['bt', 'bf unk', 'bf lines', 'bf']
-    labels['FinWhale'] = ['ft', 'ff']
-    label_human_readable = [{'ft': 'Fin Call', 'ff': 'Fin False Call', 'bt': 'Blue B Call', 'bf_unk': 'Blue False Call', 'bf_lines': 'Blue False Call Lines'}]
 
     base_directory = '/Volumes/PAM_Analysis/Batch_Detections/BLED'
     df = pd.DataFrame()
@@ -68,7 +64,8 @@ if __name__ == '__main__':
     plt.title('Weekly Calls for ' + p)
     plt.tight_layout()
     #plt.show()
-    plt.savefig('{0}/{1}.png'.format(os.getcwd(), p))
+    plt.savefig('{0}/{1}.png'.format(os.getcwd(), 'weekly_predictions_all'))
     plt.close()
 
+    df_pivot.to_csv('weekly_predictions.csv')
 
