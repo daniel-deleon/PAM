@@ -32,7 +32,8 @@ def preprocess_raw(wav_path, conf):
             _, file = os.path.split(wav)
             base_file = file.split('.wav')[0]
             out_file = os.path.join(spec_path, base_file + '.spectrogram.png')
-            spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
+            if not os.path.exists(out_file):
+                spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
 
 def preprocess(bled_path, spectrogram_path, conf):
     '''
@@ -83,25 +84,22 @@ def preprocess(bled_path, spectrogram_path, conf):
 if __name__ == '__main__':
 
     # TODO: refactor this code into command arguments
+
+    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2015/'
+    fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2015/'
+
+    months = [10]
+    for m in months:
+        preprocess_raw('{0}/{1:02}'.format(blue_bled_path, m), conf.BLUE_B)
+    for m in months:
+        preprocess_raw('{0}/{1:02}'.format(fin_bled_path, m), conf.FIN)
+
     # Set path to directory with folders train and test wav files 
-    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2015/09/'
-    #fin_bled_path = '/Volumes/PAM_Analysis/Detectors/BLED_detection/BLED_Results/FinWhale/'
-    
-    # Set path to directory to save optimized spectrogram of wav files
-    #blue_spectrogram_path = '/Volumes/PAM_Analysis/TrainingData/data/test/'
-    #fin_spectrogram_path = '/Volumes/PAM_Analysis/TrainingData/data/FinWhaleUpdate/'
+    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2016/'
+    fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2016/'
 
-    # make the directory if it doesn't exist
-    #if not os.path.exists(blue_spectrogram_path):
-    #    os.mkdir(blue_spectrogram_path)
-    #if not os.path.exists(fin_spectrogram_path):
-    #    os.mkdir(fin_spectrogram_path)
-    
-    # Plot whale sound
-    #audio_path = os.path.join(path_data, 'BlueWhaleB/BLED20150914/') + 'bb_sel.01.ch01.170620.083556.91..wav'
-    #plot_spectrogram('20150914', audio_path, spectrogram_path, bin_size=250)
-
-    #preprocess(fin_bled_path, fin_spectrogram_path, conf.FIN)
-    #preprocess(blue_bled_path, blue_spectrogram_path, conf.BLUE_B)
-
-    preprocess_raw(blue_bled_path, conf.BLUE_B)
+    months = [8, 9, 11]
+    for m in months:
+        preprocess_raw('{0}/{1:02}'.format(blue_bled_path, m), conf.BLUE_B)
+    for m in months:
+        preprocess_raw('{0}/{1:02}'.format(fin_bled_path, m), conf.FIN)
