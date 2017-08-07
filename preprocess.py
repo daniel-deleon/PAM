@@ -15,7 +15,7 @@ def preprocess_raw(wav_path, conf):
     :param conf: spectrogram configuration settings
     :return: 
     '''
-    for wav in glob.iglob(wav_path + '**/*.wav', recursive=False):
+    for wav in glob.iglob(wav_path + '**/*.wav', recursive=True):
 
         # get the selection number in the filename
         wav_path, wav_file = os.path.split(wav)
@@ -90,9 +90,9 @@ if __name__ == '__main__':
 
     months = [10]
     for m in months:
-        preprocess_raw('{0}/{1:02}'.format(blue_bled_path, m), conf.BLUE_B)
+        preprocess_raw('{0}/{1:02}/wav/'.format(blue_bled_path, m), conf.BLUE_B)
     for m in months:
-        preprocess_raw('{0}/{1:02}'.format(fin_bled_path, m), conf.FIN)
+        preprocess_raw('{0}/{1:02}/wav/'.format(fin_bled_path, m), conf.FIN)
 
     # Set path to directory with folders train and test wav files 
     blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2016/'
@@ -100,6 +100,6 @@ if __name__ == '__main__':
 
     months = [8, 9, 11]
     for m in months:
-        preprocess_raw('{0}/{1:02}'.format(blue_bled_path, m), conf.BLUE_B)
+        preprocess_raw('{0}/{1:02}/wav/'.format(blue_bled_path, m), conf.BLUE_B)
     for m in months:
-        preprocess_raw('{0}/{1:02}'.format(fin_bled_path, m), conf.FIN)
+        preprocess_raw('{0}/{1:02}/wav/'.format(fin_bled_path, m), conf.FIN)
