@@ -67,8 +67,9 @@ def preprocess_training(base_path, conf):
                 if pd.isnull(label):
                   continue
 
-                #if 'bdt' not in label:
-                #    continue
+                if 'bdt' in label:
+                    continue
+
                 spectrogram_path_by_class = os.path.join(base_path, 'spectrogram', label)
 
                 if not os.path.exists(spectrogram_path_by_class):
@@ -84,11 +85,11 @@ def preprocess_training(base_path, conf):
                     base_file = file.split('.wav')[0]
                     out_file = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.png')
                     if 't' in label:
-                        find_blob = True
+                        spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
                     else:
-                        find_blob = False
-                    spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, find_blob=find_blob, plotpath=out_file)
-                    # uncomment below to display instead of just saving to disk
+                        spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
+
+                        # uncomment below to display instead of just saving to disk
                     #spectrogram_utilities.display_optimized_spectrogram(conf, _samples, sample_rate, binsize=2 ** 10, plotpath=out_file)
                  
 

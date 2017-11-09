@@ -4,8 +4,8 @@ __author__ = "Danelle Cline, Daniel De Leon"
 __copyright__ = "Copyright 2017, MBARI"
 __credits__ = ["MBARI"]
 __license__ = "GPL"
-__maintainer__ = "Daniel De Leon"
-__email__ = "ddeleon at mbari.org"
+__maintainer__ = "Danelle Cline"
+__email__ = "dcline at mbari.org"
 __doc__ = '''
 
 Utility module for generating spectrograms for classification tests
@@ -20,12 +20,16 @@ import matplotlib
 import matplotlib.pyplot as plt
 import os
 import subprocess
+import conf
 
 from matplotlib import cm
 from matplotlib import mlab
 
 from scipy.ndimage.filters import gaussian_filter
 import cv2
+from viscm import viscm
+
+COLORMAP=conf.parula_map
 
 def stft(sig, NFFT, overlapFac=0.5):
     '''
@@ -78,7 +82,7 @@ def logscale_spec(spec, sr=44100, factor=20.):
     return newspec, freqs
 
 
-def plot_spectrogram(ax, P, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len):
+def plot_spectrogram(ax, P, timebins, freqbins, freq, binsize, sample_rate, sample_len):
     '''
     Function to allow code reuse
     :param ax: 
@@ -88,7 +92,7 @@ def plot_spectrogram(ax, P, colormap, timebins, freqbins, freq, binsize, sample_
     from matplotlib import mlab
     import matplotlib.ticker as plticker
 
-    plt.imshow(P, origin='lower', cmap=colormap)
+    plt.imshow(P, origin='lower', cmap=COLORMAP)
     xlocs = np.float32(np.linspace(0, timebins - 1, 5))
     ylocs = np.int16(np.round(np.linspace(0, freqbins - 1, 10)))
     ax.set_xticks(xlocs)
@@ -106,21 +110,135 @@ def plot_spectrogram(ax, P, colormap, timebins, freqbins, freq, binsize, sample_
     plt.axis('off')
 
 
-def optimize_spectrogram(conf, samples, sample_rate, colormap=cm.get_cmap('bwr'), find_blob=False, plotpath=os.path.join(os.getcwd())):
+def optimize_spectrogram_blob(conf, samples, sample_rate, plotpath=os.path.join(os.getcwd())):
     '''
     optimize and save spectrogram
     :param conf:  configuration settings for the spectrogram
     :param samples:  samples to create spectrogram from
     :param plotpath: path to the file to save the output to
-    :param colormap:
-    :param find_blob: true if run blob detection
-    :return: 
+    :return:
     '''
-    from matplotlib import mlab, cm
     s = stft(samples, conf['num_fft'], .95)
     sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
-    #ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
-    ims = np.where(sshow>0., 20.*np.log10(np.abs(sshow))/ 10e-6, 0.) # 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
+    ims = np.where(sshow>0., 20.*np.log10(np.abs(sshow))/ 10e-6, 0.)
+
+    P = np.transpose(ims)
+    freq_bin = float(P.shape[0]) / float(sample_rate / 2)
+    minM = -1 * (P.shape[0] - int(conf['low_cut_off_freq'] * freq_bin))
+    maxM = -1 * (P.shape[0] - int(conf['high_cut_off_freq'] * freq_bin))
+
+    Q = P.copy()
+    Q[:minM] = Q[maxM:] = 34
+
+    mval, sval = np.mean(Q), np.std(Q)
+    found = False
+    for factor in np.linspace(1, 3, num=20):
+        if found:
+            break;
+        smooth_normalize(Q, conf, factor, maxM, minM, mval, plotpath, sval)
+        image = cv2.imread(plotpath)
+        image2 = cv2.imread(plotpath)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+        # find contours; should only be on object since the subplots create a frame around the images
+        im, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnt = contours[0]
+        tlx, tly, w, h = cv2.boundingRect(cnt)
+        # crop the image and run object detection
+        crop_img = image[tly:tly + h, tlx: tlx + w]
+        ret2, th = cv2.threshold(cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY), 0, 255, cv2.THRESH_OTSU)
+        kernel2 = cv2.getStructuringElement(cv2.MORPH_CROSS, (2, 2))
+        kernel3 = cv2.getStructuringElement(cv2.MORPH_CROSS, (4, 4))
+        # if found an object, center the image on this
+        a = th
+        cv2.imshow('a', a)
+        cv2.waitKey(500)
+        for j in range(0, 3):
+            a = cv2.erode(cv2.dilate(a, kernel3), kernel2)
+            #cv2.imshow('a', a)
+            #cv2.waitKey(500)
+            # only adjust the time (x) dimension - keep the frequency dimension the same
+            found, tlx, _, w, _ = find_object(a, image2)
+            if found:
+                final_crop_img = image[tly:tly + h, tlx: tlx + w]
+                #cv2.imshow('final', final_crop_img)
+                #cv2.waitKey(500)
+                cv2.imwrite(plotpath, final_crop_img)
+                break
+
+    path, file = os.path.split(plotpath)
+    filename = file.split('.png')[0]
+    plotpath_jpeg = '{0}/{1}.jpg'.format(path, filename)
+
+    # and convert to jpeg and resize
+    cmd = "/usr/local/bin/convert '{0}' -adaptive-resize 299x299\! '{1}'".format(plotpath, plotpath_jpeg)
+    subproc = subprocess.Popen(cmd, env=os.environ, shell=True)
+    subproc.communicate()
+    print('Done creating ' + plotpath_jpeg)
+    os.remove(plotpath)
+
+
+def smooth_normalize(Q, conf, factor, maxM, minM, mval, plotpath, sval):
+    '''
+    Smooth and normalize the spectrogram array. Creates an image and writes to a file
+    :param Q: the spectrogram array
+    :param conf:  configuration settings
+    :param factor:  factor to multiply to standard deviation for normalization
+    :param maxM: max index in the array to keep
+    :param minM: min index in the array to keep
+    :param mval: mean value for normalization
+    :param plotpath: path to file to save the results to (png file)
+    :param sval: standard deviation for normalization
+    :return:
+    '''
+    # Extreme values are capped to mean ± factor* std
+    Q[Q > mval + factor * sval] = mval + factor * sval
+    Q[Q < mval - factor * sval] = mval - factor * sval
+    # uncomment below to zoom in whale call
+    Q = Q[minM:maxM]
+    # pad with zeros along the edges to deal with boundary effects from the convolution
+    zero_pad = 1
+    npad = ((0, 0), (zero_pad, zero_pad))
+    Q = np.pad(Q, pad_width=npad, mode='constant', constant_values=0)
+    # Smooth and remove edges
+    inner = 3
+    filter = np.ones(inner)
+    if conf['blur_axis'] is 'time':
+        Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=1, arr=Q)
+    elif conf['blur_axis'] is 'frequency':
+        Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=0, arr=Q)
+    else:
+        Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=1, arr=Q)
+    num_cols = Q2.shape[1] - zero_pad - 1
+    num_rows = Q2.shape[0] - zero_pad - 1
+    Q = Q2[zero_pad + 1:num_rows, zero_pad + 1:num_cols]
+    # Save the final result, slicing only the part of the array above the cut-off frequency cut_off_freq and blurring
+    # make a 3x3 figure without the frame
+    fig = plt.figure()
+    width = 3
+    height = 3
+    fig.set_size_inches(width, height)
+    plt.axis('off')
+    plt.imshow(np.flipud(Q), interpolation='bilinear', cmap=COLORMAP)
+    plt.tight_layout()
+    plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
+    extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    # plt.show()
+    plt.savefig(plotpath, bbox_inches=extent)
+    plt.close()
+
+
+def optimize_spectrogram(conf, samples, sample_rate, plotpath=os.path.join(os.getcwd())):
+    '''
+    optimize and save spectrogram
+    :param conf:  configuration settings for the spectrogram
+    :param samples:  samples to create spectrogram from
+    :param plotpath: path to the file to save the output to
+    :return: 
+    '''
+    s = stft(samples, conf['num_fft'], .95)
+    sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
+    ims = np.where(sshow>0., 20.*np.log10(np.abs(sshow))/ 10e-6, 0.)
 
     P = np.transpose(ims)
     freq_bin = float(P.shape[0]) / float(sample_rate / 2)
@@ -133,68 +251,7 @@ def optimize_spectrogram(conf, samples, sample_rate, colormap=cm.get_cmap('bwr')
     # Extreme values are capped to mean ± factor* std
     mval, sval = np.mean(Q), np.std(Q)
 
-    Q[Q > mval + conf['factor'] * sval] = mval + conf['factor'] * sval
-    Q[Q < mval - conf['factor'] * sval] = mval - conf['factor'] * sval
-
-    #uncomment below to zoom in whale call
-    Q = Q[minM:maxM]
-
-    # pad with zeros along the edges to deal with boundary effects from the convolution
-    zero_pad = 1
-    npad = ((0, 0), (zero_pad, zero_pad))
-    Q = np.pad(Q, pad_width=npad, mode='constant', constant_values=0)
-
-    # Smooth and remove edges
-    inner = 3
-    filter = np.ones(inner)
-    if conf['blur_axis'] is 'time':
-        Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=1, arr=Q)
-    elif conf['blur_axis'] is 'frequency':
-        Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=0, arr=Q)
-    else:
-        Q2 = np.apply_along_axis(lambda m: np.convolve(m, filter, mode='same'), axis=1, arr=Q)
-    num_cols = Q2.shape[1] - zero_pad - 1
-    num_rows = Q2.shape[0] - zero_pad - 1
-    Q = Q2[zero_pad+1:num_rows,zero_pad+1:num_cols]
-
-    # Save the final result, slicing only the part of the array above the cut-off frequency cut_off_freq and blurring
-    # make a 3x3 figure without the frame
-    fig = plt.figure()
-    width = 3
-    height = 3
-    fig.set_size_inches(width, height)
-    plt.axis('off')
-    plt.imshow(np.flipud(Q),interpolation='bilinear',cmap=colormap)
-    plt.tight_layout()
-    plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
-    extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    #plt.show()
-
-    plt.savefig(plotpath, bbox_inches=extent)
-    plt.close()
-    image = cv2.imread(plotpath)
-    final_crop_img = image
-
-    if find_blob:
-        image2 = cv2.imread(plotpath)
-        height, width = image.shape[:2]
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
-        # find contours; should only be on object since the subplots create a frame around the images
-        im, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        cnt = contours[0]
-        tlx, tly, w, h = cv2.boundingRect(cnt)
-        # crop the image and run object detection
-        crop_img = image[tly:tly + h, tlx: tlx + w]
-        ret2, th = cv2.threshold(cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY), 0, 255, cv2.THRESH_OTSU)
-        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (2, 2))
-        # if found an object, center the image on this
-        found, tlx, _, w, _ = find_object(cv2.erode(th, kernel, iterations=5), image2)
-        if found:
-          final_crop_img = image[tly:tly + h, tlx: tlx + w]
-        #cv2.imshow('final', final_crop_img)
-        #cv2.waitKey()
-        cv2.imwrite(plotpath, final_crop_img)
+    smooth_normalize(Q, conf, 1, maxM, minM, mval, plotpath, sval)
 
     path, file = os.path.split(plotpath)
     filename = file.split('.png')[0]
@@ -222,12 +279,11 @@ def display_optimized_spectrogram(conf, samples, sample_rate, binsize=2 ** 10, p
     sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
     ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
     timebins, freqbins = np.shape(ims)
-    colormap = cm.get_cmap('bwr')
     sample_len = len(samples)
 
     fig = plt.figure()
     ax0 = plt.subplot(121)
-    plot_spectrogram(ax0, np.transpose(ims), colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
+    plot_spectrogram(ax0, np.transpose(ims), timebins, freqbins, freq, binsize, sample_rate, sample_len)
     fig.clf()
 
     P = np.transpose(ims)
@@ -240,9 +296,9 @@ def display_optimized_spectrogram(conf, samples, sample_rate, binsize=2 ** 10, p
     R[:minM] = R[maxM: - 1] = 34  # 68/2 maxfreq/2
     fig = plt.figure(figsize=(14, 4))
     ax1 = plt.subplot(121)
-    plot_spectrogram(ax1, R, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
+    plot_spectrogram(ax1, R, timebins, freqbins, freq, binsize, sample_rate, sample_len)
     ax2 = plt.subplot(122)
-    plot_spectrogram(ax2, P, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
+    plot_spectrogram(ax2, P, timebins, freqbins, freq, binsize, sample_rate, sample_len)
     plt.suptitle('Comparison low frequency range (left) vs full image (right)', fontsize=16)
     plt.show()
     fig.clf()
@@ -257,9 +313,9 @@ def display_optimized_spectrogram(conf, samples, sample_rate, binsize=2 ** 10, p
     R[:minM] = 34
     fig = plt.figure(figsize=(14, 4))
     ax1 = plt.subplot(121)
-    plot_spectrogram(ax1, P, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
+    plot_spectrogram(ax1, P, timebins, freqbins, freq, binsize, sample_rate, sample_len)
     ax2 = plt.subplot(122)
-    plot_spectrogram(ax2, R, colormap, timebins, freqbins, freq, binsize, sample_rate, sample_len)
+    plot_spectrogram(ax2, R, timebins, freqbins, freq, binsize, sample_rate, sample_len)
     plt.suptitle('Comparison original image (left) vs capped extreme values (right)', fontsize=16)
     plt.show()
     fig.clf()
@@ -273,7 +329,7 @@ def display_optimized_spectrogram(conf, samples, sample_rate, binsize=2 ** 10, p
         fig.set_size_inches(width, height)
         plt.axis('off')
         blurred = gaussian_filter(R[minM:, :], sigma=1)
-        plt.imshow(blurred, origin="lower", aspect=4, cmap=colormap)
+        plt.imshow(blurred, origin="lower", aspect=4, cmap=COLORMAP)
         plt.tight_layout()
         plt.subplots_adjust(left=0, right=1.1, top=1.0, bottom=0)
         extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
