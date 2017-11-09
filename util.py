@@ -836,7 +836,7 @@ def save_metrics(args, classifier, bottlenecks, all_label_names, test_ground_tru
     f1_all = f1_score(y_true, y_pred)
 
     df_roc.to_pickle(os.path.join(args.model_dir, 'metrics_roc.pkl'))
-
+    distortion = 'None'
     with open(os.path.join(args.model_dir,'metrics.csv'), "w") as f:
         f.write("Distortion,Accuracy,Precision,F1\n")
         if args.random_crop:

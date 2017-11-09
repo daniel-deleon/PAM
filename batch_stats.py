@@ -51,21 +51,24 @@ if __name__ == '__main__':
     pivoted = pivoted[pivoted.Score >= 0.9]
     pivoted = pivoted.rename(columns={'Score': 'Total'})
 
+    pivoted.to_csv('all_predictions.csv')
+    pivoted.describe().to_csv('all_statistics.csv');
+    
     width = 10
     height = 6
 
     # bar plot the weekly summary
-    df_pivot = pivoted.resample('W').sum()
+    df_pivot = pivoted.resample('7D').sum()
     index = df_pivot.index.map(lambda t: t.strftime('%Y-%m-%d'))
     df_pivot.index = index
     df_pivot.plot(kind='bar', alpha=0.75, rot=45, figsize=(width, height), width=1.5)
     plt.xlabel('Week')
     plt.ylabel('Total Calls')
-    plt.title('Weekly Calls for ' + p)
+    plt.title('Weekly Calls for ' + ','.join(prefix))
     plt.tight_layout()
     #plt.show()
-    plt.savefig('{0}/{1}.png'.format(os.getcwd(), 'weekly_predictions_all'))
+    plt.savefig('{0}/{1}.png'.format(os.getcwd(), 'weekly_predictions_7D_resample_sum'))
     plt.close()
 
-    df_pivot.to_csv('weekly_predictions.csv')
+    df_pivot.to_csv('weekly_predictions_7D_resample_sum.csv')
 

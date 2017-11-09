@@ -25,6 +25,7 @@ from matplotlib import cm
 from matplotlib import mlab
 
 from scipy.ndimage.filters import gaussian_filter
+import cv2
 
 def stft(sig, NFFT, overlapFac=0.5):
     '''
@@ -105,19 +106,21 @@ def plot_spectrogram(ax, P, colormap, timebins, freqbins, freq, binsize, sample_
     plt.axis('off')
 
 
-def optimize_spectrogram(conf, samples, sample_rate, colormap=cm.get_cmap('bwr'), plotpath=os.path.join(os.getcwd())):
+def optimize_spectrogram(conf, samples, sample_rate, colormap=cm.get_cmap('bwr'), find_blob=False, plotpath=os.path.join(os.getcwd())):
     '''
     optimize and save spectrogram
     :param conf:  configuration settings for the spectrogram
     :param samples:  samples to create spectrogram from
     :param plotpath: path to the file to save the output to
-    :param colormap: 
+    :param colormap:
+    :param find_blob: true if run blob detection
     :return: 
     '''
     from matplotlib import mlab, cm
-    s = stft(samples, conf['num_fft'], .8)
+    s = stft(samples, conf['num_fft'], .95)
     sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
-    ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
+    #ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
+    ims = np.where(sshow>0., 20.*np.log10(np.abs(sshow))/ 10e-6, 0.) # 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
 
     P = np.transpose(ims)
     freq_bin = float(P.shape[0]) / float(sample_rate / 2)
@@ -167,20 +170,45 @@ def optimize_spectrogram(conf, samples, sample_rate, colormap=cm.get_cmap('bwr')
     extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
     #plt.show()
 
-    plt.savefig(plotpath, bbox_inches=extent) 
+    plt.savefig(plotpath, bbox_inches=extent)
     plt.close()
-    print('Done creating ' + plotpath)
+    image = cv2.imread(plotpath)
+    final_crop_img = image
+
+    if find_blob:
+        image2 = cv2.imread(plotpath)
+        height, width = image.shape[:2]
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+        # find contours; should only be on object since the subplots create a frame around the images
+        im, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnt = contours[0]
+        tlx, tly, w, h = cv2.boundingRect(cnt)
+        # crop the image and run object detection
+        crop_img = image[tly:tly + h, tlx: tlx + w]
+        ret2, th = cv2.threshold(cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY), 0, 255, cv2.THRESH_OTSU)
+        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (2, 2))
+        # if found an object, center the image on this
+        found, tlx, _, w, _ = find_object(cv2.erode(th, kernel, iterations=5), image2)
+        if found:
+          final_crop_img = image[tly:tly + h, tlx: tlx + w]
+        #cv2.imshow('final', final_crop_img)
+        #cv2.waitKey()
+        cv2.imwrite(plotpath, final_crop_img)
+
     path, file = os.path.split(plotpath)
     filename = file.split('.png')[0]
     plotpath_jpeg = '{0}/{1}.jpg'.format(path, filename)
-    cmd = "/usr/local/bin/convert '{0}' '{1}'".format(plotpath, plotpath_jpeg)
+
+    # and convert to jpeg and resize
+    cmd = "/usr/local/bin/convert '{0}' -adaptive-resize 299x299\! '{1}'".format(plotpath, plotpath_jpeg)
     subproc = subprocess.Popen(cmd, env=os.environ, shell=True)
     subproc.communicate()
     print('Done creating ' + plotpath_jpeg)
     os.remove(plotpath)
 
 
-def display_optimized_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpath=None):
+def display_optimized_spectrogram(conf, samples, sample_rate, binsize=2 ** 10, plotpath=None):
     '''
     optimize spectrogram ans and optionally save spectrogram
     :param samples: array of dB values from audio file
@@ -204,9 +232,8 @@ def display_optimized_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpat
 
     P = np.transpose(ims)
     freq_bin = float(P.shape[0]) / float(sample_rate / 2) # Hz/bin
-    low_cut_off_freq, high_cut_off_freq = 39, 51  # Hz
-    minM = -1 * (P.shape[0] - int(low_cut_off_freq * freq_bin))
-    maxM = -1 * (P.shape[0] - int(high_cut_off_freq * freq_bin))
+    minM = -1 * (P.shape[0] - int(conf['low_cut_off_freq'] * freq_bin))
+    maxM = -1 * (P.shape[0] - int(conf['high_cut_off_freq'] * freq_bin))
     Q = P.copy()
     R = Q.copy()
     mval, sval = np.mean(np.append(Q[:minM], [Q[maxM:]])), np.std(np.append(Q[:minM], [Q[maxM:]]))
@@ -253,3 +280,52 @@ def display_optimized_spectrogram(samples, sample_rate, binsize=2 ** 10, plotpat
         plt.savefig(plotpath, bbox_inches=extent)
         fig.clf()
         print('Done creating ' + plotpath)
+
+
+def find_object(image_bin, image_color, imshow = False):
+  # get blobs
+  im, contours, heirachy = cv2.findContours(image_bin, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+  img = cv2.drawContours(image_color, contours, -1, (0, 255, 0), 7)
+  if imshow:
+    cv2.namedWindow('object', cv2.WINDOW_AUTOSIZE)
+    cv2.startWindowThread()
+    cv2.imshow('object', image_bin)
+    cv2.waitKey()
+    cv2.imshow('object', img)
+    cv2.waitKey()
+
+  # keep valid contours
+  valid_contours = []
+  cnt = 0
+  for c in contours:
+    try:
+      # get rectangle bounding contour
+      [x, y, w, h] = cv2.boundingRect(c)
+      area = cv2.contourArea(c)
+      print("area {0} x {1} y {2} w {3} h {4}".format(area, x, y, w, h))
+      # get valid areas, not blobs along the edge or noise
+      if area > 2000 and area < 15000:
+        pt = [float(y), float(y)]
+        cn = contours[cnt]
+        valid_contours.append(c)
+        if imshow:
+          img = cv2.drawContours(image_color, [cn], 0, (0, 0, 255), 5)
+          cv2.imshow('object', img)
+          cv2.waitKey()
+      cnt += 1
+
+    except Exception as ex:
+      print(ex)
+
+  if imshow:
+    cv2.waitKey()
+    for i in range(0,2):
+      cv2.destroyAllWindows()
+
+  if len(valid_contours) > 0:
+    # find largest contour in mask
+    c = max(valid_contours, key=cv2.contourArea)
+    [x, y, w, h] = cv2.boundingRect(c)
+    return True, x, y, w, h
+
+  return False, -1, -1, -1, -1

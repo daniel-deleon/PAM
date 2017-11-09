@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import spectrogram_utilities
 import soundfile as sf
@@ -5,7 +6,7 @@ import os
 import glob
 import pandas as pd
 import conf
- 
+import cv2
 
 def preprocess_raw(wav_path, conf):
     '''
@@ -35,36 +36,43 @@ def preprocess_raw(wav_path, conf):
             if not os.path.exists(out_file):
                 spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
 
-def preprocess(bled_path, spectrogram_path, conf):
+def preprocess_training(base_path, conf):
     '''
     Generate spectrograms of all sounds recursively in a directory
     First search for the txt that describes the annotation - use this to sort the spectrograms into
     separate directories for training the classifier
 
-    :param bled_path:  BLED detection path
-    :param spectrogram_path:  directory where all produced spectrograms are stored
+    :param base_path:  base directory where all produced spectrograms, wav files and detection files are stored
     :param conf:  configuration settings for generating the spectrogram
     '''  
     
-    for full_filename in glob.iglob(bled_path + '**/*.txt', recursive=True):
+    for full_filename in glob.iglob(base_path + '**/*.txt', recursive=True):
         print('Reading {0}'.format(full_filename))
         df = pd.read_csv(full_filename, sep='\t')
         if 'Selection' in df.keys():
             path, file = os.path.split(full_filename)
-            date = path.rsplit('/BLED', 1)[-1]
-            for wav in glob.iglob(path + '**/*.wav', recursive=False):
+            date_str = file.split('_')[0]
+            date_start = datetime.strptime(date_str, '%Y%m%dT%H%M%SZ')
+            #for wav in glob.iglob('{0}/wav/*_{1:%Y%m%dT%H%M%S}*.wav'.format(base_path, date_start), recursive=False):
+            for wav in glob.iglob('{0}/wav/{1:%Y%m%dT%H%M%S}*.wav'.format(base_path, date_start), recursive=False):
 
                 # get the selection number in the filename
                 wav_path, wav_file = os.path.split(wav)
-                selection = int(wav_file.split('.')[1])
+                selection = int(wav_file.split('.')[4])
 
                 # lookup class by selection number
                 match = df[df.Selection == selection]
-                label = match.iloc[0].Label
-                spectrogram_path_by_class = os.path.join(spectrogram_path, label)
+                label = match.iloc[0].classification
+
+                if pd.isnull(label):
+                  continue
+
+                #if 'bdt' not in label:
+                #    continue
+                spectrogram_path_by_class = os.path.join(base_path, 'spectrogram', label)
 
                 if not os.path.exists(spectrogram_path_by_class):
-                    os.mkdir(spectrogram_path_by_class)
+                    os.makedirs(spectrogram_path_by_class)
  
                 info = sf.info(wav)
                 sample_rate = info.samplerate
@@ -74,32 +82,33 @@ def preprocess(bled_path, spectrogram_path, conf):
                     _samples = f.read(frames) 
                     _, file = os.path.split(wav)
                     base_file = file.split('.wav')[0]
-                    out_file = os.path.join(spectrogram_path_by_class, base_file + date + '.spectrogram.png')
-
-                    spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
+                    out_file = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.png')
+                    if 't' in label:
+                        find_blob = True
+                    else:
+                        find_blob = False
+                    spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, find_blob=find_blob, plotpath=out_file)
                     # uncomment below to display instead of just saving to disk
-                    # spectrogram_utilities.display_optimized_spectrogram(_samples, sample_rate, binsize=bin_size, plotpath=out_file)
+                    #spectrogram_utilities.display_optimized_spectrogram(conf, _samples, sample_rate, binsize=2 ** 10, plotpath=out_file)
                  
 
 if __name__ == '__main__':
 
     # TODO: refactor this code into command arguments
+    blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD/'
+    preprocess_training(blued_path, conf.BLUE_D)
 
-    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2015/'
-    fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2015/'
-
-    months = [10]
-    for m in months:
-        preprocess_raw('{0}/{1:02}/wav/'.format(blue_bled_path, m), conf.BLUE_B)
-    for m in months:
-        preprocess_raw('{0}/{1:02}/wav/'.format(fin_bled_path, m), conf.FIN)
+    #blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleD/2016/'
+    #fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2015/'
+    #for m in months:
+    #    preprocess_raw('{0}/{1:02}/wav/'.format(fin_bled_path, m), conf.FIN)
 
     # Set path to directory with folders train and test wav files 
-    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2016/'
-    fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2016/'
+    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleD/2016/'
+    #fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2016/'
 
-    months = [8, 9, 11]
+    '''months = [8, 9, 11]
     for m in months:
         preprocess_raw('{0}/{1:02}/wav/'.format(blue_bled_path, m), conf.BLUE_B)
     for m in months:
-        preprocess_raw('{0}/{1:02}/wav/'.format(fin_bled_path, m), conf.FIN)
+        preprocess_raw('{0}/{1:02}/wav/'.format(fin_bled_path, m), conf.FIN)'''

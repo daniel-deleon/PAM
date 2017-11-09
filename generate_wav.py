@@ -41,6 +41,7 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
             start_time_secs = df['Begin Time (s)']
             end_time_secs = df['End Time (s)']
             selections = df['Selection']
+            delta_time = df['Delta Time (s)']
 
             with sf.SoundFile(wav_file, 'r') as f:
                 info = sf.info(wav_file)
@@ -48,6 +49,7 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
                 max_samples = int(info.duration * info.samplerate)
 
                 for i, row in df.iterrows():
+                    #pad_samples = int(5.0 * info.samplerate) #int(delta_time[i] * 1.0 * info.samplerate)
                     start_sample = int(start_time_secs[i] * info.samplerate)
                     end_sample = int(end_time_secs[i] * info.samplerate)
                     selection = selections[i]
@@ -65,28 +67,29 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
                     samples = f.read(duration_sample)
 
                     start_iso = date_start.strftime("%Y%m%dT%H%M%S")
+                    #new_file = '{0}/{1}_{2}.{3}.{4}.sel.{5:02}.ch01.wav'.format(wav_path, int(delta_time[i]), start_iso, start_sample, end_sample, selection)
                     new_file = '{0}/{1}.{2}.{3}.sel.{4:02}.ch01.wav'.format(wav_path, start_iso, start_sample, end_sample, selection)
                     with sf.SoundFile(file=new_file, mode='w',samplerate=info.samplerate, channels=info.channels,
                                       subtype=info.subtype) as fout:
                         fout.info = info
                         fout.write(samples)
 
+    print('Done generating wav')
 if __name__ == '__main__':
 
-    # padding in seconds to add to beginning/ending of wav files
-    blue_padding = 5
-    fin_padding = 3
-
-    wav_dir = '/Volumes/PAM_Analysis/decimated/2015/'
+    wav_dir = '/Volumes/PAM_Analysis/decimated/2016/'
 
     # Set path to directory with folders with detection results; wav files will get generated in the same place
     # organized by month
-    months = [8, 9, 11, 12]
-    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2015/'
-    for m in months:
-        generate_wav('{0}/{1:02}'.format(blue_bled_path, m), wav_dir, blue_padding)
+    blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD/'
+    generate_wav(blued_path, wav_dir, conf.BLUE_D['padding_secs'])
 
-    fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleB/2015/'
-    months = [8, 9, 11, 12]
+    '''
+    months = [8]
+    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleD/2016/'
+    fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2016/'
+    months = [8, 9, 11]
     for m in months:
-        generate_wav('{0}/{1:02}'.format(fin_bled_path, m), wav_dir, fin_padding)
+        generate_wav('{0}/{1:02}'.format(fin_bled_path, m), wav_dir, conf.FIN['padding_secs'])'''
+
+    print('Done')
