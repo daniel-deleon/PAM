@@ -5,14 +5,27 @@ BLUE_B = dict(
     high_cut_off_freq = 51,
     blur_axis = 'time',
     factor = 3.25,
-    num_fft = 512
+    num_fft = 512,
+    # padding in seconds to add to beginning/ending of wav files
+    padding_secs = 5
+)
+BLUE_D = dict(
+    low_cut_off_freq = 30,
+    high_cut_off_freq = 90,
+    blur_axis = 'frequency',
+    factor = 1.125,
+    num_fft = 256,
+    # padding in seconds to add to beginning/ending of wav files
+    padding_secs = 3
 )
 FIN = dict(
     low_cut_off_freq = 10,
     high_cut_off_freq = 36,
     blur_axis = 'frequency',
     factor = 2.0,
-    num_fft = 128
+    num_fft = 128,
+    # padding in seconds to add to beginning/ending of wav files
+    fin_padding = 3
 )
 
 # Classification model parameters
