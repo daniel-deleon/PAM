@@ -17,7 +17,7 @@ import subprocess
 
 if __name__ == '__main__':
     learning_rate=.01
-    options = '--learning_rate {0} --random_crop 20 --testing_percentage 50'.format(learning_rate)
+    options = '--learning_rate {0} --random_crop 20 --testing_percentage 20'.format(learning_rate)
     prefix = ['BlueWhaleD'] #'FinWhale', 'BlueWhaleB']
     base_directory = '/Volumes/PAM_Analysis/TrainingData'
     exemplar_dir = '/Volumes/PAM_Analysis/TrainingData/exemplars/'
