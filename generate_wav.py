@@ -19,7 +19,7 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
     :param pad_seconds:  padding in seconds to add to beginning and ending of wav files 
     '''
 
-    for full_filename in glob.iglob(bled_path + '**/*.txt', recursive=True):
+    for full_filename in glob.iglob(bled_path + '**/selections.txt', recursive=True):
         print('Reading {0}'.format(full_filename))
         df = pd.read_csv(full_filename, sep='\t')
         if 'Selection' in df.keys() \
