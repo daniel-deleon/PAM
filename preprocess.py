@@ -46,7 +46,7 @@ def preprocess_training(base_path, conf):
     :param conf:  configuration settings for generating the spectrogram
     '''  
     
-    for full_filename in glob.iglob(base_path + '**/*.txt', recursive=True):
+    for full_filename in glob.iglob(base_path + '**/*selections.txt', recursive=True):
         print('Reading {0}'.format(full_filename))
         df = pd.read_csv(full_filename, sep='\t')
         if 'Selection' in df.keys():
@@ -67,8 +67,8 @@ def preprocess_training(base_path, conf):
                 if pd.isnull(label):
                   continue
 
-                if 'bdt' in label:
-                    continue
+                #if 'bdt' in label:
+                #    continue
 
                 spectrogram_path_by_class = os.path.join(base_path, 'spectrogram', label)
 
@@ -84,12 +84,14 @@ def preprocess_training(base_path, conf):
                     _, file = os.path.split(wav)
                     base_file = file.split('.wav')[0]
                     out_file = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.png')
-                    if 't' in label:
-                        spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
-                    else:
-                        spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
+                    out_file_jpg = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.jpg')
+                    if not os.path.exists(out_file_jpg):
+                        if 't' in label:
+                            spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
+                        else:
+                            spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
 
-                        # uncomment below to display instead of just saving to disk
+                    # uncomment below to display instead of just saving to disk
                     #spectrogram_utilities.display_optimized_spectrogram(conf, _samples, sample_rate, binsize=2 ** 10, plotpath=out_file)
                  
 
