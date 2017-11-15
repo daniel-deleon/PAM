@@ -19,7 +19,7 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
     :param pad_seconds:  padding in seconds to add to beginning and ending of wav files 
     '''
 
-    for full_filename in glob.iglob(bled_path + '**/selections.txt', recursive=True):
+    for full_filename in glob.iglob(bled_path + '**/*selections.txt', recursive=True):
         print('Reading {0}'.format(full_filename))
         df = pd.read_csv(full_filename, sep='\t')
         if 'Selection' in df.keys() \
@@ -36,7 +36,7 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
             date_start = datetime.strptime(dts[0], '%Y%m%dT%H%M%SZ')
 
             # get the decimated file for this period
-            wav_file = '{0}/{1:02}/{2}.d1024.250Hz.wav'.format(wav_dir, date_start.month, '_'.join(dts))
+            wav_file = '{0}/{1:04}/{2:02}/{3}.d1024.250Hz.wav'.format(wav_dir, date_start.year, date_start.month, '_'.join(dts))
 
             start_time_secs = df['Begin Time (s)']
             end_time_secs = df['End Time (s)']
@@ -77,7 +77,7 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
     print('Done generating wav')
 if __name__ == '__main__':
 
-    wav_dir = '/Volumes/PAM_Analysis/decimated/2016/'
+    wav_dir = '/Volumes/PAM_Analysis/decimated/'
 
     # Set path to directory with folders with detection results; wav files will get generated in the same place
     # organized by month
