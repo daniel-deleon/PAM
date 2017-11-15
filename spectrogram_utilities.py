@@ -219,7 +219,7 @@ def smooth_normalize(Q, conf, factor, maxM, minM, mval, plotpath, sval):
     height = 3
     fig.set_size_inches(width, height)
     plt.axis('off')
-    plt.imshow(np.flipud(Q), interpolation='bilinear', cmap=COLORMAP)
+    #plt.imshow(np.flipud(Q), interpolation='bilinear', cmap=COLORMAP)
     plt.tight_layout()
     plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
     extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
