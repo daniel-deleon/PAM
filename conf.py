@@ -16,7 +16,7 @@ BLUE_D = dict(
     factor = 1.0,
     num_fft = 128,
     # padding in seconds to add to beginning/ending of wav files
-    padding_secs = 2
+    padding_secs = 3
 )
 FIN = dict(
     low_cut_off_freq = 10,
