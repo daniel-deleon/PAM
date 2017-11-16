@@ -18,7 +18,7 @@ BLUE_D = dict(
     # padding in seconds to add to beginning/ending of wav files
     padding_secs = 3
 )
-FIN = dict(
+FIN_20HZ = dict(
     low_cut_off_freq = 10,
     high_cut_off_freq = 36,
     blur_axis = 'frequency',
