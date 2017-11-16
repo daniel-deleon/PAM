@@ -127,19 +127,19 @@ def optimize_spectrogram_blob(conf, samples, sample_rate, plotpath=os.path.join(
     minM = -1 * (P.shape[0] - int(conf['low_cut_off_freq'] * freq_bin))
     maxM = -1 * (P.shape[0] - int(conf['high_cut_off_freq'] * freq_bin))
 
-    Q = P.copy()
-    Q[:minM] = Q[maxM:] = 34
-
-    mval, sval = np.mean(Q), np.std(Q)
     found = False
-    for factor in np.linspace(1, 3, num=20):
+    for factor in np.linspace(1, 3, num=9):
+        Q = P.copy()
+        Q[:minM] = Q[maxM:] = 34
+        mval, sval = np.mean(Q), np.std(Q)
         if found:
+            print('Found object')
             break;
         smooth_normalize(Q, conf, factor, maxM, minM, mval, plotpath, sval)
         image = cv2.imread(plotpath)
         image2 = cv2.imread(plotpath)
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)
         # find contours; should only be on object since the subplots create a frame around the images
         im, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cnt = contours[0]
@@ -150,17 +150,16 @@ def optimize_spectrogram_blob(conf, samples, sample_rate, plotpath=os.path.join(
         kernel2 = cv2.getStructuringElement(cv2.MORPH_CROSS, (2, 2))
         kernel3 = cv2.getStructuringElement(cv2.MORPH_CROSS, (4, 4))
         # if found an object, center the image on this
-        a = th
-        cv2.imshow('a', a)
+        cv2.imshow('otsu', th)
         cv2.waitKey(500)
         for j in range(0, 3):
-            a = cv2.erode(cv2.dilate(a, kernel3), kernel2)
-            #cv2.imshow('a', a)
-            #cv2.waitKey(500)
+            th = cv2.erode(cv2.dilate(th, kernel3), kernel2)
+            cv2.imshow('cleaned', th)
+            cv2.waitKey(500)
             # only adjust the time (x) dimension - keep the frequency dimension the same
-            found, tlx, _, w, _ = find_object(a, image2)
+            found, tlx, _, w, _ = find_object(th, image2)
             if found:
-                final_crop_img = image[tly:tly + h, tlx: tlx + w]
+                final_crop_img = image#[tly:tly + h, tlx: tlx + w]
                 #cv2.imshow('final', final_crop_img)
                 #cv2.waitKey(500)
                 cv2.imwrite(plotpath, final_crop_img)
@@ -219,7 +218,7 @@ def smooth_normalize(Q, conf, factor, maxM, minM, mval, plotpath, sval):
     height = 3
     fig.set_size_inches(width, height)
     plt.axis('off')
-    #plt.imshow(np.flipud(Q), interpolation='bilinear', cmap=COLORMAP)
+    plt.imshow(np.flipud(Q), interpolation='bilinear', cmap=COLORMAP)
     plt.tight_layout()
     plt.subplots_adjust(left=0, right=1.0, top=1.0, bottom=0)
     extent = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
@@ -275,7 +274,7 @@ def display_optimized_spectrogram(conf, samples, sample_rate, binsize=2 ** 10, p
     :return: enhanced spectrogram
     '''
     from matplotlib import mlab, cm
-    s = stft(samples, binsize, 0.80)
+    s = stft(samples, binsize, 0.95)
     sshow, freq = logscale_spec(s, factor=1.0, sr=sample_rate)
     ims = 20. * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
     timebins, freqbins = np.shape(ims)
@@ -342,6 +341,11 @@ def find_object(image_bin, image_color, imshow = False):
   # get blobs
   im, contours, heirachy = cv2.findContours(image_bin, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
   img = cv2.drawContours(image_color, contours, -1, (0, 255, 0), 7)
+
+  # if only one contour, no objects found. Should have at least background and one object
+  if len(contours) == 1:
+    return False, -1, -1, -1, -1
+
   if imshow:
     cv2.namedWindow('object', cv2.WINDOW_AUTOSIZE)
     cv2.startWindowThread()
