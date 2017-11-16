@@ -54,7 +54,7 @@ def preprocess_training(base_path, conf):
             date_str = file.split('_')[0]
             date_start = datetime.strptime(date_str, '%Y%m%dT%H%M%SZ')
             #for wav in glob.iglob('{0}/wav/*_{1:%Y%m%dT%H%M%S}*.wav'.format(base_path, date_start), recursive=False):
-            for wav in glob.iglob('{0}/wav/{1:%Y%m%dT%H%M%S}*.wav'.format(base_path, date_start), recursive=False):
+            for wav in glob.iglob('{0}/wav/{1:%Y%m%dT%H%M%S}*.wav'.format(path, date_start), recursive=True):
 
                 # get the selection number in the filename
                 wav_path, wav_file = os.path.split(wav)
@@ -62,7 +62,11 @@ def preprocess_training(base_path, conf):
 
                 # lookup class by selection number
                 match = df[df.Selection == selection]
-                label = match.iloc[0].classification
+
+                if 'classification' in df.keys():
+                    label = match.iloc[0].classification
+                if 'Label' in df.keys():
+                    label = match.iloc[0].Label
 
                 if pd.isnull(label):
                   continue
@@ -98,8 +102,11 @@ def preprocess_training(base_path, conf):
 if __name__ == '__main__':
 
     # TODO: refactor this code into command arguments
-    blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD/'
-    preprocess_training(blued_path, conf.BLUE_D)
+    #blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD/'
+    #preprocess_training(blued_path, conf.BLUE_D)
+
+    fin_path = '/Volumes/PAM_Analysis/TrainingData/FinWhale20Hz/'
+    preprocess_training(fin_path, conf.FIN_20HZ)
 
     #blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleD/2016/'
     #fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2015/'
