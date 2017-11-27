@@ -159,7 +159,7 @@ def optimize_spectrogram_blob(conf, samples, sample_rate, plotpath=os.path.join(
             # only adjust the time (x) dimension - keep the frequency dimension the same
             found, tlx, _, w, _ = find_object(th, image2)
             if found:
-                final_crop_img = image#[tly:tly + h, tlx: tlx + w]
+                final_crop_img = image[tly:tly + h, tlx: tlx + w]
                 #cv2.imshow('final', final_crop_img)
                 #cv2.waitKey(500)
                 cv2.imwrite(plotpath, final_crop_img)
