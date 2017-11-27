@@ -42,6 +42,10 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
             end_time_secs = df['End Time (s)']
             selections = df['Selection']
 
+            if not os.path.exists(wav_file):
+                print('Decimated wav file {0} does not exist'.format(wav_file))
+                continue
+
             with sf.SoundFile(wav_file, 'r') as f:
                 info = sf.info(wav_file)
                 pad_samples = int(pad_seconds * info.samplerate)
@@ -75,6 +79,7 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
                                 fout.write(samples)
                         except Exception as ex:
                             print(ex)
+                            print('{0} {1} {2} {3}'.format(wav_file, start_sample, end_sample, max_samples))
                         continue
 
     print('Done generating wav')
@@ -84,11 +89,15 @@ if __name__ == '__main__':
 
     # Set path to directory with folders with detection results; wav files will get generated in the same place
     # organized by month
+
+    blued_path = '/Volumes/PAM_Analysis/TestData/BlueWhaleD/'
+    generate_wav(blued_path, wav_dir, conf.BLUE_D['padding_secs'])
+
     #blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD/'
     #generate_wav(blued_path, wav_dir, conf.BLUE_D['padding_secs'])
 
-    fin20_path = '/Volumes/PAM_Analysis/TrainingData/FinWhale20Hz/'
-    generate_wav(fin20_path, wav_dir, conf.FIN_20HZ['padding_secs'])
+    #fin20_path = '/Volumes/PAM_Analysis/TrainingData/FinWhale20Hz/'
+    #generate_wav(fin20_path, wav_dir, conf.FIN_20HZ['padding_secs'])
 
     '''
     months = [8]
