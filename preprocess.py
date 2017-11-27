@@ -16,7 +16,7 @@ def preprocess_raw(wav_path, conf):
     :param conf: spectrogram configuration settings
     :return: 
     '''
-    for wav in glob.iglob(wav_path + '**/*.wav', recursive=True):
+    for wav in sorted(glob.iglob(wav_path + '**/*.wav', recursive=True)):
 
         # get the selection number in the filename
         wav_path, wav_file = os.path.split(wav)
@@ -34,7 +34,7 @@ def preprocess_raw(wav_path, conf):
             base_file = file.split('.wav')[0]
             out_file = os.path.join(spec_path, base_file + '.spectrogram.png')
             if not os.path.exists(out_file):
-                spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
+                spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
 
 def preprocess_training(base_path, conf):
     '''
@@ -46,7 +46,7 @@ def preprocess_training(base_path, conf):
     :param conf:  configuration settings for generating the spectrogram
     '''  
     
-    for full_filename in glob.iglob(base_path + '**/*selections.txt', recursive=True):
+    for full_filename in sorted(glob.iglob(base_path + '**/*selections.txt', recursive=True)):
         print('Reading {0}'.format(full_filename))
         df = pd.read_csv(full_filename, sep='\t')
         if 'Selection' in df.keys():
@@ -90,10 +90,7 @@ def preprocess_training(base_path, conf):
                     out_file = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.png')
                     out_file_jpg = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.jpg')
                     if not os.path.exists(out_file_jpg):
-                        if 't' in label:
-                            spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
-                        else:
-                            spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
+                        spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
 
                     # uncomment below to display instead of just saving to disk
                     #spectrogram_utilities.display_optimized_spectrogram(conf, _samples, sample_rate, binsize=2 ** 10, plotpath=out_file)
@@ -102,11 +99,14 @@ def preprocess_training(base_path, conf):
 if __name__ == '__main__':
 
     # TODO: refactor this code into command arguments
+    blued_path = '/Volumes/PAM_Analysis/TestData/BlueWhaleD/'
+    preprocess_raw(blued_path, conf.BLUE_D)
+
     #blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD/'
     #preprocess_training(blued_path, conf.BLUE_D)
 
-    fin_path = '/Volumes/PAM_Analysis/TrainingData/FinWhale20Hz/'
-    preprocess_training(fin_path, conf.FIN_20HZ)
+    #fin_path = '/Volumes/PAM_Analysis/TrainingData/FinWhale20Hz/'
+    #preprocess_training(fin_path, conf.FIN_20HZ)
 
     #blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleD/2016/'
     #fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2015/'
