@@ -364,7 +364,7 @@ def find_object(image_bin, image_color, imshow = False):
       # get rectangle bounding contour
       [x, y, w, h] = cv2.boundingRect(c)
       area = cv2.contourArea(c)
-      print("area {0} x {1} y {2} w {3} h {4}".format(area, x, y, w, h))
+      #print("area {0} x {1} y {2} w {3} h {4}".format(area, x, y, w, h))
       # get valid areas, not blobs along the edge or noise
       if area > 2000 and area < 15000:
         pt = [float(y), float(y)]
