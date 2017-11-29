@@ -22,10 +22,10 @@ FIN_20HZ = dict(
     low_cut_off_freq = 10,
     high_cut_off_freq = 36,
     blur_axis = 'frequency',
-    factor = 2.0,
+    factor = 1.0,
     num_fft = 128,
     # padding in seconds to add to beginning/ending of wav files
-    padding_secs = 3
+    padding_secs = 2
 )
 
 # Classification model parameters

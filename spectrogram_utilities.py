@@ -110,7 +110,7 @@ def plot_spectrogram(ax, P, timebins, freqbins, freq, binsize, sample_rate, samp
     plt.axis('off')
 
 
-def optimize_spectrogram_blob(conf, samples, sample_rate, plotpath=os.path.join(os.getcwd())):
+def optimize_spectrogram_blob(conf, samples, sample_rate, plotpath=os.path.join(os.getcwd()), imshow = False):
     '''
     optimize and save spectrogram
     :param conf:  configuration settings for the spectrogram
@@ -150,12 +150,14 @@ def optimize_spectrogram_blob(conf, samples, sample_rate, plotpath=os.path.join(
         kernel2 = cv2.getStructuringElement(cv2.MORPH_CROSS, (2, 2))
         kernel3 = cv2.getStructuringElement(cv2.MORPH_CROSS, (4, 4))
         # if found an object, center the image on this
-        cv2.imshow('otsu', th)
-        cv2.waitKey(500)
+        if imshow:
+            cv2.imshow('otsu', th)
+            cv2.waitKey(500)
         for j in range(0, 3):
             th = cv2.erode(cv2.dilate(th, kernel3), kernel2)
-            cv2.imshow('cleaned', th)
-            cv2.waitKey(500)
+            if imshow:
+                cv2.imshow('cleaned', th)
+                cv2.waitKey(500)
             # only adjust the time (x) dimension - keep the frequency dimension the same
             found, tlx, _, w, _ = find_object(th, image2)
             if found:

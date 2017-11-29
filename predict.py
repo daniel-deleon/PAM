@@ -49,6 +49,7 @@ def process_command_line():
   # Input and output file flags.
   parser.add_argument('--input_dir', type=str, required=True, help="Directory of images to predict")
   parser.add_argument('--prediction_dir', type=str, required=True, help="Directory to store predicted output images")
+  parser.add_argument('--exemplar_dir', type=str, required=True,  help="Path to folders of exemplar images for each label")
 
   # where the model information lives
   parser.add_argument('--model_dir', type=str, required=True,
@@ -121,8 +122,11 @@ if __name__ == '__main__':
     if not img_list:
         print("No images found in %s" % args.input_dir)
     else:
+        # Create example images
+        exemplars = util.create_image_exemplars(args.exemplar_dir)
         util.ensure_dir(args.prediction_dir)
-        util.make_image_predictions(sess, output_labels_file, args.bottleneck_dir, classifier, jpeg_data_tensor, bottleneck_tensor,
-                        img_list, labels_list, args.prediction_dir)
+        util.make_image_predictions(sess, output_labels_file, args.bottleneck_dir, classifier,
+                                    jpeg_data_tensor, bottleneck_tensor, img_list, labels_list,
+                                    args.prediction_dir, exemplars)
 
     print("Done !")

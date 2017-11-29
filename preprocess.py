@@ -54,7 +54,7 @@ def preprocess_training(base_path, conf):
             date_str = file.split('_')[0]
             date_start = datetime.strptime(date_str, '%Y%m%dT%H%M%SZ')
             #for wav in glob.iglob('{0}/wav/*_{1:%Y%m%dT%H%M%S}*.wav'.format(base_path, date_start), recursive=False):
-            for wav in glob.iglob('{0}/wav/{1:%Y%m%dT%H%M%S}*.wav'.format(path, date_start), recursive=True):
+            for wav in sorted(glob.iglob('{0}/wav/{1:%Y%m%dT%H%M%S}*.wav'.format(path, date_start), recursive=True)):
 
                 # get the selection number in the filename
                 wav_path, wav_file = os.path.split(wav)
@@ -71,7 +71,9 @@ def preprocess_training(base_path, conf):
                 if pd.isnull(label):
                   continue
 
-                #if 'bdt' in label:
+                #if 'bdf' in label:
+                #    continue
+                #if 'wff' in label:
                 #    continue
 
                 spectrogram_path_by_class = os.path.join(base_path, 'spectrogram', label)
@@ -90,7 +92,10 @@ def preprocess_training(base_path, conf):
                     out_file = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.png')
                     out_file_jpg = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.jpg')
                     if not os.path.exists(out_file_jpg):
-                        spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
+                        if 't' in label:
+                            spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
+                        else:
+                            spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
 
                     # uncomment below to display instead of just saving to disk
                     #spectrogram_utilities.display_optimized_spectrogram(conf, _samples, sample_rate, binsize=2 ** 10, plotpath=out_file)

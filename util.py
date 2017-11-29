@@ -62,7 +62,8 @@ def get_prediction_images(img_dir):
     
   return file_list 
 
-def make_image_predictions(sess, output_labels_file, bottleneck_dir, classifier, jpeg_data_tensor, bottleneck_tensor, path_list, labels_list, target_dir):
+def make_image_predictions(sess, output_labels_file, bottleneck_dir, classifier, jpeg_data_tensor,
+                           bottleneck_tensor, path_list, labels_list, target_dir, exemplars):
   """Use the learned model to make predictions."""
 
   if not labels_list:
@@ -102,8 +103,12 @@ def make_image_predictions(sess, output_labels_file, bottleneck_dir, classifier,
   prediction_input = np.array(bottlenecks, dtype=np.float32)
   predictions = classifier.predict(x=prediction_input, as_iterable=True)
   print("Predictions:")
+  workbook = xlsxwriter.Workbook(os.path.join(target_dir, 'predictions.xlsx'))
+  temp_dir = tempfile.mkdtemp()
   with open(os.path.join(target_dir, 'predictions.csv'), "w") as f:
       f.write("Predicted,Filename,Score\n")
+      row = 0
+      worksheet = workbook.add_worksheet()
       for i, p in enumerate(predictions):
         for k in p.keys():
           if k == "index":
@@ -112,6 +117,23 @@ def make_image_predictions(sess, output_labels_file, bottleneck_dir, classifier,
             if score > 0.90:
               print("index label is: %s score %f file: %s" % (label, score, path_list[i]))
               f.write("{0},{1},{2}\n".format(label, path_list[i], score))
+              worksheet.write(0, 0, 'Thumbnail')
+              worksheet.write(0, 1, 'Predicted')
+              worksheet.write(0, 2, 'Score')
+              worksheet.write(0, 3, 'Exemplar')
+              worksheet.write(0, 4, 'Filename')
+              worksheet.set_row(row, height=50)
+              worksheet.write(row, 1, label)
+              worksheet.write(row, 2, score)
+              try:
+                  thumbnail_file = crop(temp_dir, random.choice(exemplars[label]))
+                  worksheet.insert_image(row, 0, thumbnail_file)
+                  thumbnail_file = crop(temp_dir, path_list[i])
+                  worksheet.insert_image(row, 3, thumbnail_file)
+              except Exception as ex:
+                  print('{0}'.format(ex))
+              worksheet.write(row, 4, path_list[i])
+              row += 1
 
 def get_dims(image):
   """
