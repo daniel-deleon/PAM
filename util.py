@@ -107,7 +107,7 @@ def make_image_predictions(sess, output_labels_file, bottleneck_dir, classifier,
   temp_dir = tempfile.mkdtemp()
   with open(os.path.join(target_dir, 'predictions.csv'), "w") as f:
       f.write("Predicted,Filename,Score\n")
-      row = 0
+      row = 1
       worksheet = workbook.add_worksheet()
       for i, p in enumerate(predictions):
         for k in p.keys():
