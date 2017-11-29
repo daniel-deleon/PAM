@@ -127,9 +127,9 @@ def make_image_predictions(sess, output_labels_file, bottleneck_dir, classifier,
               worksheet.write(row, 2, score)
               try:
                   thumbnail_file = crop(temp_dir, random.choice(exemplars[label]))
-                  worksheet.insert_image(row, 0, thumbnail_file)
-                  thumbnail_file = crop(temp_dir, path_list[i])
                   worksheet.insert_image(row, 3, thumbnail_file)
+                  thumbnail_file = crop(temp_dir, path_list[i])
+                  worksheet.insert_image(row, 0, thumbnail_file)
               except Exception as ex:
                   print('{0}'.format(ex))
               worksheet.write(row, 4, path_list[i])
