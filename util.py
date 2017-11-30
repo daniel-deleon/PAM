@@ -109,31 +109,39 @@ def make_image_predictions(sess, output_labels_file, bottleneck_dir, classifier,
       f.write("Predicted,Filename,Score\n")
       row = 1
       worksheet = workbook.add_worksheet()
+      worksheet.write(0, 0, 'Blob')
+      worksheet.write(0, 1, 'Thumbnail')
+      worksheet.write(0, 2, 'Predicted')
+      worksheet.write(0, 3, 'Score')
+      worksheet.write(0, 4, 'Exemplar')
+      worksheet.write(0, 5, 'Filename')
       for i, p in enumerate(predictions):
         for k in p.keys():
           if k == "index":
             score = p['class_vector'][p[k]]
             label = labels_list[p[k]]
-            if score > 0.90:
+            if score > 0.50:
               print("index label is: %s score %f file: %s" % (label, score, path_list[i]))
               f.write("{0},{1},{2}\n".format(label, path_list[i], score))
-              worksheet.write(0, 0, 'Thumbnail')
-              worksheet.write(0, 1, 'Predicted')
-              worksheet.write(0, 2, 'Score')
-              worksheet.write(0, 3, 'Exemplar')
-              worksheet.write(0, 4, 'Filename')
               worksheet.set_row(row, height=50)
-              worksheet.write(row, 1, label)
-              worksheet.write(row, 2, score)
+              worksheet.write(row, 2, label)
+              worksheet.write(row, 3, score)
               try:
                   thumbnail_file = crop(temp_dir, random.choice(exemplars[label]))
-                  worksheet.insert_image(row, 3, thumbnail_file)
+                  worksheet.insert_image(row, 4, thumbnail_file)
                   thumbnail_file = crop(temp_dir, path_list[i])
                   worksheet.insert_image(row, 0, thumbnail_file)
+                  fn = path_list[i].replace('/spectrogram/', '/spectrogram_raw/')
+                  thumbnail_file = crop(temp_dir, fn, 'f')
+                  worksheet.insert_image(row, 1, thumbnail_file)
               except Exception as ex:
                   print('{0}'.format(ex))
-              worksheet.write(row, 4, path_list[i])
+              worksheet.write(row, 5, path_list[i])
               row += 1
+
+      # clean up
+      workbook.close()
+      shutil.rmtree(temp_dir)
 
 def get_dims(image):
   """
@@ -891,8 +899,8 @@ def save_metrics(args, classifier, bottlenecks, all_label_names, test_ground_tru
     print('Done')
 
 
-def crop(temp_dir, image_path):
+def crop(temp_dir, image_path, prepend_str=""):
     path, filename = os.path.split(image_path)
-    thumbnail_file = os.path.join(temp_dir, 'thumb_' + filename)
+    thumbnail_file = os.path.join(temp_dir, prepend_str + 'thumb_' + filename)
     os.system('/usr/local/bin/convert "%s" -thumbnail 50x50 -unsharp 0x.5 "%s"' % (image_path, thumbnail_file))
     return thumbnail_file
