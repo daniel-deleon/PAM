@@ -23,7 +23,7 @@ import numpy as np
 import fnmatch
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, accuracy_score
 import matplotlib.gridspec as gridspec
 import pandas as pd
 
@@ -136,6 +136,7 @@ def plot_metrics(model_out_dir):
         fpr = dict()
         tpr = dict()
         roc_auc = dict()
+        thresholds = dict()
         y_test = np.vstack(df['y_test'].values)
         y_score = np.vstack(df['y_score'].values)
         labels = df['labels'].values[0] # only need the first row here
@@ -166,26 +167,46 @@ def plot_metrics(model_out_dir):
         for i in range(num_classes):
           if (i + max_per_plot) % max_per_plot == 0:
             ax = fig.add_subplot(gs[a])
-            ax.set_xlim([0.0, 1.0])
-            ax.set_ylim([0.0, 1.05])
+            ax.set_xlim([0, 30])
+            ax.set_ylim([80, 100.1])
             if a == 0:
-              ax.set_xlabel('False Positive Rate')
-              ax.set_ylabel('True Positive Rate')
+              ax.set_xlabel('False Positive Rate (FPR)')
+              ax.set_ylabel('True Positive Rate (TPR)')
               ax.set_title('Receiver Operating Characteristic (ROC) ' + distortion)
-            ax.plot(fpr["micro"], tpr["micro"],
+            ax.plot(np.round(100*fpr["micro"],2), np.round(100*tpr["micro"],2),
                  label='micro-average ROC curve (area = {0:0.2f})'
                        ''.format(roc_auc["micro"]),
                  color='deeppink', linestyle=':', linewidth=4)
             a += 1
 
-          fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
+          fpr[i], tpr[i], thresholds[i] = roc_curve(y_test[:, i], y_score[:, i])
           roc_auc[i] = auc(fpr[i], tpr[i])
 
           color = colors[i % len(colors)]
           style = linestyles[i % len(linestyles)]
           marker = markers[i % len(markers)]
-          ax.plot(fpr[i], tpr[i], linestyle=style, marker=marker, color=color, markersize=5,
+          ax.plot(np.round(100*fpr[i],2), np.round(100*tpr[i],2), linestyle=style, marker=marker, color=color, markersize=5,
                   label='class {0} (area = {1:0.2f})'.format(labels[i], roc_auc[i]));
+
+          # only annotate the threshold for every 4 points in the true class
+          if 't' in labels[i]:
+            score = y_score[:, i]
+            ti = thresholds[i]
+            y_true = y_test[:, i]
+            xi = np.round(100*fpr[i],2)
+            yi = np.round(100*tpr[i],2)
+            for k in range(0, len(ti), 2):
+              y_pred = score >= ti[k]
+              accuracy = accuracy_score(y_true, y_pred)
+              ax.annotate('{0:.2f}, {1}%, {2}%, {3}%'.format(ti[k],np.round(100*accuracy,1),np.round(xi[k],1),np.round(yi[k],1)),
+                            xy=(xi[k], yi[k]), xycoords='data',fontsize='xx-small',
+                            xytext=(60, -30), textcoords='offset points',
+                            arrowprops=dict(arrowstyle="->"))
+              if k == 8:
+                ax.annotate('score, accuracy, FPR, TPR',
+                            xy=(xi[k], yi[k]), xycoords='data', fontsize='xx-small',
+                            xytext=(60, -40), textcoords='offset points')
+
 
           ax.legend(loc=0, fontsize='x-small')
 
