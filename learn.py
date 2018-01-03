@@ -92,95 +92,95 @@ if __name__ == '__main__':
 
     # Set up the pre-trained graph.
     print("Using model directory {0} and model from {1}".format(args.model_dir, conf.DATA_URL))
-    util.ensure_dir(args.model_dir)
-    util.maybe_download_and_extract(data_url=conf.DATA_URL, dest_dir=args.incp_model_dir)
-    model_filename = os.path.join(args.incp_model_dir, conf.MODEL_GRAPH_NAME)
-    graph, bottleneck_tensor, jpeg_data_tensor, resized_image_tensor=(util.create_inception_graph(sess, model_filename))
+    '''util.ensure_dir(args.model_dir)
+util.maybe_download_and_extract(data_url=conf.DATA_URL, dest_dir=args.incp_model_dir)
+model_filename = os.path.join(args.incp_model_dir, conf.MODEL_GRAPH_NAME)
+graph, bottleneck_tensor, jpeg_data_tensor, resized_image_tensor=(util.create_inception_graph(sess, model_filename))
 
-    labels_list = None
-    output_labels_file = os.path.join(args.model_dir, "output_labels.json")
-    output_labels_file_lt20 = os.path.join(args.model_dir, "output_labels_lt20.json")
-    d = os.path.dirname(output_labels_file_lt20)
-    util.ensure_dir(d)
+labels_list = None
+output_labels_file = os.path.join(args.model_dir, "output_labels.json")
+output_labels_file_lt20 = os.path.join(args.model_dir, "output_labels_lt20.json")
+d = os.path.dirname(output_labels_file_lt20)
+util.ensure_dir(d)
 
-    # Look at the folder structure, and create lists of all the images.
-    image_lists = util.create_image_lists(output_labels_file,
-                                          output_labels_file_lt20,
-                                          args.image_dir, args.testing_percentage,
-                                          args.validation_percentage)
+# Look at the folder structure, and create lists of all the images.
+image_lists = util.create_image_lists(output_labels_file,
+                                      output_labels_file_lt20,
+                                      args.image_dir, args.testing_percentage,
+                                      args.validation_percentage)
 
-    class_count = len(image_lists.keys())
-    if class_count == 0:
-      print('No valid folders of images found at ' + args.image_dir)
-      exit(-1)
-    if class_count == 1:
-      print('Only one valid folder of images found at ' + args.image_dir +
-            ' - multiple classes are needed for classification.')
-      exit(-1)
+class_count = len(image_lists.keys())
+if class_count == 0:
+  print('No valid folders of images found at ' + args.image_dir)
+  exit(-1)
+if class_count == 1:
+  print('Only one valid folder of images found at ' + args.image_dir +
+        ' - multiple classes are needed for classification.')
+  exit(-1)
 
-    # See if the command-line flags mean we're applying any distortions.
-    do_distort_images =  (args.flip_left_right or (args.random_crop != 0)
-                          or (args.random_scale != 0) or
-                          (args.random_brightness != 0))
-    sess = tf.Session()
+# See if the command-line flags mean we're applying any distortions.
+do_distort_images =  (args.flip_left_right or (args.random_crop != 0)
+                      or (args.random_scale != 0) or
+                      (args.random_brightness != 0))
+sess = tf.Session()
 
-    # Create example images
-    exemplars = util.create_image_exemplars(args.exemplar_dir)
+# Create example images
+exemplars = util.create_image_exemplars(args.exemplar_dir)
 
-    if do_distort_images:
-      # We will be applying distortions, so setup the operations we'll need.
-      distorted_jpeg_data_tensor, distorted_image_tensor = util.add_input_distortions(
-          args.flip_left_right, args.random_crop, args.random_scale,
-          args.random_brightness)
-    else:
-      # We'll make sure we've calculated the 'bottleneck' image summaries and
-      # cached them on disk.
-      util.cache_bottlenecks(sess, image_lists, args.image_dir, args.bottleneck_dir,
-                        jpeg_data_tensor, bottleneck_tensor)
+if do_distort_images:
+# We will be applying distortions, so setup the operations we'll need.
+distorted_jpeg_data_tensor, distorted_image_tensor = util.add_input_distortions(
+  args.flip_left_right, args.random_crop, args.random_scale,
+  args.random_brightness)
+else:
+# We'll make sure we've calculated the 'bottleneck' image summaries and
+# cached them on disk.
+util.cache_bottlenecks(sess, image_lists, args.image_dir, args.bottleneck_dir,
+                jpeg_data_tensor, bottleneck_tensor)
 
-    all_label_names = list(image_lists.keys())
-    train_bottlenecks, train_ground_truth, image_paths = util.get_all_cached_bottlenecks(
-                                                                        sess,
-                                                                        image_lists, 'training',
-                                                                        args.bottleneck_dir, args.image_dir,
-                                                                        jpeg_data_tensor, bottleneck_tensor)
-    train_bottlenecks = np.array(train_bottlenecks)
-    train_ground_truth = np.array(train_ground_truth)
+all_label_names = list(image_lists.keys())
+train_bottlenecks, train_ground_truth, image_paths = util.get_all_cached_bottlenecks(
+                                                                sess,
+                                                                image_lists, 'training',
+                                                                args.bottleneck_dir, args.image_dir,
+                                                                jpeg_data_tensor, bottleneck_tensor)
+train_bottlenecks = np.array(train_bottlenecks)
+train_ground_truth = np.array(train_ground_truth)
 
-    # Define the custom estimator
-    model_fn = transfer_model.make_model_fn(class_count, args.final_tensor_name, args.learning_rate)
+# Define the custom estimator
+model_fn = transfer_model.make_model_fn(class_count, args.final_tensor_name, args.learning_rate)
 
-    model_params = {}
-    classifier = tf.contrib.learn.Estimator(model_fn=model_fn, params=model_params, model_dir=args.model_dir)
+model_params = {}
+classifier = tf.contrib.learn.Estimator(model_fn=model_fn, params=model_params, model_dir=args.model_dir)
 
-    # run the training
-    print("Starting training for %s steps max" % args.num_steps)
-    classifier.fit(
-        x=train_bottlenecks.astype(np.float32),
-        y=train_ground_truth, batch_size=10,
-        max_steps=args.num_steps)
+# run the training
+print("Starting training for %s steps max" % args.num_steps)
+classifier.fit(
+x=train_bottlenecks.astype(np.float32),
+y=train_ground_truth, batch_size=10,
+max_steps=args.num_steps)
 
-    # We've completed our training, so run a test evaluation on some new images we haven't used before.
-    test_bottlenecks, test_ground_truth, image_paths = util.get_all_cached_bottlenecks(
-                                                          sess, image_lists, 'testing',
-                                                          args.bottleneck_dir, args.image_dir, jpeg_data_tensor,
-                                                          bottleneck_tensor)
-    test_bottlenecks = np.array(test_bottlenecks)
-    test_ground_truth = np.array(test_ground_truth)
-    print("evaluating....")
-    classifier.evaluate(test_bottlenecks.astype(np.float32), test_ground_truth)
+# We've completed our training, so run a test evaluation on some new images we haven't used before.
+test_bottlenecks, test_ground_truth, image_paths = util.get_all_cached_bottlenecks(
+                                              sess, image_lists, 'testing',
+                                              args.bottleneck_dir, args.image_dir, jpeg_data_tensor,
+                                              bottleneck_tensor)
+test_bottlenecks = np.array(test_bottlenecks)
+test_ground_truth = np.array(test_ground_truth)
+print("evaluating....")
+classifier.evaluate(test_bottlenecks.astype(np.float32), test_ground_truth)
 
-    # write the output labels file if it doesn't already exist
-    if gfile.Exists(output_labels_file):
-      print("Labels list file already exists; not writing.")
-    else:
-      output_labels = json.dumps(list(image_lists.keys()))
-      with gfile.FastGFile(output_labels_file, 'w') as f:
-        f.write(output_labels)
+# write the output labels file if it doesn't already exist
+if gfile.Exists(output_labels_file):
+print("Labels list file already exists; not writing.")
+else:
+output_labels = json.dumps(list(image_lists.keys()))
+with gfile.FastGFile(output_labels_file, 'w') as f:
+f.write(output_labels)
 
-    print("\nSaving metrics...")
-    util.save_metrics(args, classifier, test_bottlenecks.astype(np.float32), all_label_names, test_ground_truth, \
-                      image_paths, image_lists, exemplars)
+print("\nSaving metrics...")
+util.save_metrics(args, classifier, test_bottlenecks.astype(np.float32), all_label_names, test_ground_truth, \
+          image_paths, image_lists, exemplars)'''
 
     util_plot.plot_metrics(args.model_dir)
 

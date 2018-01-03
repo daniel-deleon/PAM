@@ -20,7 +20,7 @@ def preprocess_raw(wav_path, conf):
 
         # get the selection number in the filename
         wav_path, wav_file = os.path.split(wav)
-        spec_path = '{0}/spectrogram'.format(wav_path.split('wav')[0])
+        spec_path = '{0}/spectrogram_raw'.format(wav_path.split('wav')[0])
         if not os.path.exists(spec_path):
             os.mkdir(spec_path)
 
@@ -34,7 +34,7 @@ def preprocess_raw(wav_path, conf):
             base_file = file.split('.wav')[0]
             out_file = os.path.join(spec_path, base_file + '.spectrogram.png')
             if not os.path.exists(out_file):
-                spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
+                spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
 
 def preprocess_training(base_path, conf):
     '''
@@ -71,10 +71,10 @@ def preprocess_training(base_path, conf):
                 if pd.isnull(label):
                   continue
 
-                #if 'bdf' in label:
-                #    continue
-                #if 'wff' in label:
-                #    continue
+                if 'bdt' in label:
+                    continue
+                if 'wff' in label:
+                    continue
 
                 spectrogram_path_by_class = os.path.join(base_path, 'spectrogram', label)
 
@@ -92,10 +92,7 @@ def preprocess_training(base_path, conf):
                     out_file = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.png')
                     out_file_jpg = os.path.join(spectrogram_path_by_class, base_file + '.spectrogram.jpg')
                     if not os.path.exists(out_file_jpg):
-                        if 't' in label:
-                            spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
-                        else:
-                            spectrogram_utilities.optimize_spectrogram(conf, _samples, sample_rate, plotpath=out_file)
+                        spectrogram_utilities.optimize_spectrogram_blob(conf, _samples, sample_rate, plotpath=out_file)
 
                     # uncomment below to display instead of just saving to disk
                     #spectrogram_utilities.display_optimized_spectrogram(conf, _samples, sample_rate, binsize=2 ** 10, plotpath=out_file)
@@ -104,11 +101,12 @@ def preprocess_training(base_path, conf):
 if __name__ == '__main__':
 
     # TODO: refactor this code into command arguments
-    blued_path = '/Volumes/PAM_Analysis/TestData/BlueWhaleD/'
-    preprocess_raw(blued_path, conf.BLUE_D)
-
-    #blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD/'
+    #blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD//'
     #preprocess_training(blued_path, conf.BLUE_D)
+
+    #blued_path = '/Volumes/PAM_Analysis/TestData/BlueWhaleD/20160804T070000Z/'
+    #preprocess_raw(blued_path, conf.BLUE_D)
+
 
     #fin_path = '/Volumes/PAM_Analysis/TrainingData/FinWhale20Hz/'
     #preprocess_training(fin_path, conf.FIN_20HZ)
@@ -119,11 +117,12 @@ if __name__ == '__main__':
     #    preprocess_raw('{0}/{1:02}/wav/'.format(fin_bled_path, m), conf.FIN)
 
     # Set path to directory with folders train and test wav files 
-    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleD/2016/'
-    #fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2016/'
+    blue_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/BlueWhaleD/'
+    #fin_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/FinWhale/2016/'
 
-    '''months = [8, 9, 11]
-    for m in months:
-        preprocess_raw('{0}/{1:02}/wav/'.format(blue_bled_path, m), conf.BLUE_B)
-    for m in months:
-        preprocess_raw('{0}/{1:02}/wav/'.format(fin_bled_path, m), conf.FIN)'''
+    years = range(2015, 2017)
+    months = range(1, 12)
+    for y in years:
+      blue_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/BlueWhaleD/{0}'.format(y)
+      for m in months:
+          preprocess_raw('{0}/{1:02}/wav/'.format(blue_bled_path, m), conf.BLUE_D)

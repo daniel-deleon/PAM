@@ -19,7 +19,7 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
     :param pad_seconds:  padding in seconds to add to beginning and ending of wav files 
     '''
 
-    for full_filename in glob.iglob(bled_path + '**/*selections.txt', recursive=True):
+    for full_filename in glob.iglob(bled_path + '**/*Table01.txt', recursive=True):
         print('Reading {0}'.format(full_filename))
         df = pd.read_csv(full_filename, sep='\t')
         if 'Selection' in df.keys() \
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     # Set path to directory with folders with detection results; wav files will get generated in the same place
     # organized by month
 
-    blued_path = '/Volumes/PAM_Analysis/TestData/BlueWhaleD/'
+    blued_path = '/Volumes/PAM_Analysis/TestData/BlueWhaleD/20160805T070000Z/'
     generate_wav(blued_path, wav_dir, conf.BLUE_D['padding_secs'])
 
     #blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD/'
@@ -98,13 +98,13 @@ if __name__ == '__main__':
 
     #fin20_path = '/Volumes/PAM_Analysis/TrainingData/FinWhale20Hz/'
     #generate_wav(fin20_path, wav_dir, conf.FIN_20HZ['padding_secs'])
+    #fin_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/FinWhale/2016/'
 
-    '''
-    months = [8]
-    blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleD/2016/'
-    fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2016/'
-    months = [8, 9, 11]
-    for m in months:
-        generate_wav('{0}/{1:02}'.format(fin_bled_path, m), wav_dir, conf.FIN['padding_secs'])'''
+    years = range(2015, 2017)
+    months = range(1, 12)
+    for y in years:
+      blue_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/BlueWhaleD/{0:4}/'.format(y)
+      for m in months:
+          generate_wav('{0}/{1:02}'.format(blue_bled_path, m), wav_dir, conf.BLUE_D['padding_secs'])
 
     print('Done')
