@@ -20,25 +20,26 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
 
-    years = range(2015, 2017)
-    months = range(8, 12)
+    years = range(2015, 2018)
     dates = []
     prefix = 'BlueWhaleD'
     base_directory = '/Volumes/PAM_Analysis/BatchDetections/BLED'
+    df = pd.DataFrame()
     for y in years:
-      for m in months:
-        # directory where predicted output should be stored
-        predict_dir = '{0}/{1}/{2}/{3:02}'.format(base_directory, prefix, y, m)
-        all_files = glob.iglob(predict_dir + "**/predictions.csv", recursive=True)
-        df_new = pd.concat((pd.read_csv(f,index_col=None, header=0) for f in all_files))
-        for index, row in df_new.iterrows():
-            base = os.path.basename(row.Filename)
-            date = datetime.strptime(base.split('.')[0], '%Y%m%dT%H%M%S')
-            sample_start_msec = 1e3 * int(base.split('.')[1])  / 250
-            date += timedelta(milliseconds=sample_start_msec)
-            dates.append(date)
+      predict_dir = '{0}/{1}/{2}/'.format(base_directory, prefix, y)
+      all_files = sorted(glob.iglob(predict_dir + "**/predictions.csv", recursive=True))
+      for f in all_files:
+        print(f)
 
-        df = df.append(df_new, ignore_index=True)
+      df_new = pd.concat((pd.read_csv(f,index_col=None, header=0) for f in all_files))
+      for index, row in df_new.iterrows():
+          base = os.path.basename(row.Filename)
+          date = datetime.strptime(base.split('.')[0], '%Y%m%dT%H%M%S')
+          sample_start_msec = 1e3 * int(base.split('.')[1])  / 250
+          date += timedelta(milliseconds=sample_start_msec)
+          dates.append(date)
+
+      df = df.append(df_new, ignore_index=True)
 
     # # reindex with dates
     df.index = dates
@@ -48,7 +49,7 @@ if __name__ == '__main__':
     pivoted = df_sorted.pivot(index=None, columns='Predicted')
 
     # replace score with total, rename the score column to total
-    pivoted = pivoted[pivoted.Score >= 0.8]
+    pivoted = pivoted[pivoted.Score >= 0.9]
     pivoted = pivoted.rename(columns={'Score': 'Total'})
 
     pivoted.to_csv('{0}_all_predictions.csv'.format(prefix))
@@ -74,10 +75,7 @@ if __name__ == '__main__':
 
     exit(-1)
 
-
-    months = [8, 9, 10, 11, 12]
     prefix = ['BlueWhaleB', 'FinWhale']
-
     base_directory = '/Volumes/PAM_Analysis/BatchDetections/BLED'
     df = pd.DataFrame()
     dates = []

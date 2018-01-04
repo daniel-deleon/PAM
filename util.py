@@ -77,7 +77,7 @@ def make_image_predictions(sess, output_labels_file, bottleneck_dir, classifier,
       return None
 
   bottlenecks = []
-  print("Predicting for images: %s" % path_list) 
+  print("Predicting for images: %s" % path_list)
   for img_path in path_list: 
     # get bottleneck for an image path
     dir, filename = os.path.split(img_path)

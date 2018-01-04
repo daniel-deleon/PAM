@@ -72,6 +72,7 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
                             f.seek(start_sample)
                             duration_sample = end_sample - start_sample
                             samples = f.read(duration_sample)
+                            print('Creating {0}'.format(new_file))
 
                             with sf.SoundFile(file=new_file, mode='w',samplerate=info.samplerate, channels=info.channels,
                                               subtype=info.subtype) as fout:
@@ -84,24 +85,9 @@ def generate_wav(bled_path, wav_dir, pad_seconds):
 
     print('Done generating wav')
 if __name__ == '__main__':
-
     wav_dir = '/Volumes/PAM_Analysis/decimated/'
-
-    # Set path to directory with folders with detection results; wav files will get generated in the same place
-    # organized by month
-
-    blued_path = '/Volumes/PAM_Analysis/TestData/BlueWhaleD/20160805T070000Z/'
-    generate_wav(blued_path, wav_dir, conf.BLUE_D['padding_secs'])
-
-    #blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD/'
-    #generate_wav(blued_path, wav_dir, conf.BLUE_D['padding_secs'])
-
-    #fin20_path = '/Volumes/PAM_Analysis/TrainingData/FinWhale20Hz/'
-    #generate_wav(fin20_path, wav_dir, conf.FIN_20HZ['padding_secs'])
-    #fin_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/FinWhale/2016/'
-
-    years = range(2015, 2017)
-    months = range(1, 12)
+    years = range(2015, 2018)
+    months = range(12, 13)
     for y in years:
       blue_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/BlueWhaleD/{0:4}/'.format(y)
       for m in months:

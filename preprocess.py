@@ -101,27 +101,10 @@ def preprocess_training(base_path, conf):
 if __name__ == '__main__':
 
     # TODO: refactor this code into command arguments
-    #blued_path = '/Volumes/PAM_Analysis/TrainingData/BlueWhaleD//'
-    #preprocess_training(blued_path, conf.BLUE_D)
-
-    #blued_path = '/Volumes/PAM_Analysis/TestData/BlueWhaleD/20160804T070000Z/'
-    #preprocess_raw(blued_path, conf.BLUE_D)
-
-
-    #fin_path = '/Volumes/PAM_Analysis/TrainingData/FinWhale20Hz/'
-    #preprocess_training(fin_path, conf.FIN_20HZ)
-
-    #blue_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/BlueWhaleD/2016/'
-    #fin_bled_path = '/Volumes/PAM_Analysis/Batch_Detections/BLED/FinWhale/2015/'
-    #for m in months:
-    #    preprocess_raw('{0}/{1:02}/wav/'.format(fin_bled_path, m), conf.FIN)
-
     # Set path to directory with folders train and test wav files 
     blue_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/BlueWhaleD/'
-    #fin_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/FinWhale/2016/'
-
-    years = range(2015, 2017)
-    months = range(1, 12)
+    years = range(2015, 2018)
+    months = range(1, 13)
     for y in years:
       blue_bled_path = '/Volumes/PAM_Analysis/BatchDetections/BLED/BlueWhaleD/{0}'.format(y)
       for m in months:
