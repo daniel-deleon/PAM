@@ -41,37 +41,45 @@ if __name__ == '__main__':
 
       df = df.append(df_new, ignore_index=True)
 
-    # # reindex with dates
+    # reindex with dates
     df.index = dates
+
+    # drop any duplicates
+    df = df[~df.index.duplicated(keep='first')]
 
     # pivot on predictions to simplify plotting
     df_sorted = df.sort_index()
     pivoted = df_sorted.pivot(index=None, columns='Predicted')
 
     # replace score with total, rename the score column to total
-    pivoted = pivoted[pivoted.Score >= 0.9]
+    score = 0.7
+    pivoted = pivoted[pivoted.Score >= score]
     pivoted = pivoted.rename(columns={'Score': 'Total'})
 
-    pivoted.to_csv('{0}_all_predictions.csv'.format(prefix))
-    pivoted.describe().to_csv('{0}_all_statistics.csv'.format(prefix));
+    pivoted.to_csv('{0}_{1}_all_predictions.csv'.format(prefix, score))
+    pivoted.describe().to_csv('{0}_{1}_all_statistics.csv'.format(prefix, score));
 
     width = 10
     height = 6
 
-    # bar plot the weekly summary
-    df_pivot = pivoted.resample('7D').sum()
-    index = df_pivot.index.map(lambda t: t.strftime('%Y-%m-%d'))
-    df_pivot.index = index
-    df_pivot.plot(kind='bar', alpha=0.75, rot=45, figsize=(width, height), width=1.5)
+    # bar plot the weekly summary for just bdt
+    new_df = df_sorted[df_sorted.Predicted == 'bdt']
+    pivoted = new_df.pivot(index=None, columns='Predicted')
+    pivoted = pivoted[pivoted.Score >= score]
+    pivoted = pivoted.rename(columns={'Score': 'Total'})
+    pivoted = pivoted.resample('7D').sum()
+    index = pivoted.index.map(lambda t: t.strftime('%Y-%m-%d'))
+    pivoted.index = index
+    pivoted.plot(kind='bar', alpha=0.75, rot=45, figsize=(width, height), width=.5)
     plt.xlabel('Week')
     plt.ylabel('Total Calls')
-    plt.title('Weekly Calls for ' + ','.join(prefix))
+    plt.title('Weekly Calls for ' + prefix)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('{0}/{1}.png'.format(os.getcwd(), '{0}_weekly_predictions_7D_resample_sum'.format(prefix)))
+    #plt.show()
+    plt.savefig('{0}/{1}.png'.format(os.getcwd(), '{0}_{1}_weekly_predictions_7D_resample_sum'.format(prefix, score)))
     plt.close()
 
-    df_pivot.to_csv('{0}_weekly_predictions_7D_resample_sum.csv'.format(prefix))
+    pivoted.to_csv('{0}_{1}_weekly_predictions_7D_resample_sum.csv'.format(prefix, score))
 
     exit(-1)
 
